@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="">	
+<head>
+	<meta charset="utf-8"/>
+	<title>GIT tip : A simple .gitconfig file - Florent Lebreton</title>	
+	<meta name="author" content="Florent Lebreton (fle)">
+	
+
+	<meta name="description" content="As several friends have asked me this, I have posted my simple but quite useful .gitconfig file. Nothing special here, just a few aliases and some syntax highlighting :).">
+
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:creator" content="@__fle__">
+	<meta name="twitter:title" content="GIT tip : A simple .gitconfig file">
+	<meta name="twitter:description" content="As several friends have asked me this, I have posted my simple but quite useful .gitconfig file. Nothing special here, just a few aliases and some syntax highlighting :).">
+
+	<link rel="top" href="#" /><link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,300italic,400italic,600italic|Source+Code+Pro' rel='stylesheet' type='text/css'></link>
+	
+	<link rel="stylesheet" href="http://fle.github.io/theme/css/main.css" type="text/css" />
+		
+	  <script type="text/javascript" src="http://fle.github.io/theme/js/custom_scripts.js"></script>
+
+
+    <link href="http://fle.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Florent Lebreton Atom Feed" />
+</head>
+	
+<body>
+
+    <div class="container">
+	  
+	  <header role="banner">
+	    <div class="feeds">
+	        <a href="http://fle.github.io/feeds/all.atom.xml" rel="alternate"><img src="/theme/images/icons/feed-32px.png" alt="atom feed"/></a>
+	    </div>
+	      <nav class="pages">
+			  <a href="http://fle.github.io/pages/about-me.html">About me</a>
+	      </nav>
+		<a href="http://fle.github.io" class="title">Florent Lebreton</a>
+      </header>
+	
+	  <div class="wrapper">
+
+		  <div role="main" class="content">
+	<article class="full">
+			
+		<h1>GIT tip : A simple .gitconfig file</h1>
+		
+<div class="metadata">
+  <time datetime="2014-02-04T00:00:00" pubdate>Tue 04 February 2014</time>
+    <address class="vcard author">
+      by <a class="url fn" href="http://fle.github.io/author/florent-lebreton-fle.html">Florent Lebreton (fle)</a>
+    </address>
+  in <a href="http://fle.github.io/category/quick-tips.html">quick tips</a>
+<p class="tags">tagged <a href="http://fle.github.io/tag/git.html">git</a></p></div>		
+		<p>As several friends have asked me this, here is my <tt class="docutils literal"><span class="pre">~/.gitconfig</span></tt> base file.</p>
+<p>Nothing special, just a few aliases and some syntax highlighting :).</p>
+<div class="highlight"><pre><span class="go">[user]</span>
+<span class="go">        name = Florent Lebreton</span>
+<span class="go">        email = florentlebreton@free.fr</span>
+<span class="go">[color]</span>
+<span class="go">        ui = auto</span>
+
+<span class="go">[color &quot;branch&quot;]</span>
+<span class="go">        current = yellow reverse</span>
+<span class="go">        local = yellow</span>
+<span class="go">        remote = green</span>
+
+<span class="go">[color &quot;diff&quot;]</span>
+<span class="go">        meta = yellow bold</span>
+<span class="go">        frag = magenta bold</span>
+<span class="go">        old = red bold</span>
+<span class="go">        new = green bold</span>
+<span class="go">        whitespace = red reverse</span>
+
+<span class="go">[color &quot;status&quot;]</span>
+<span class="go">        added = yellow</span>
+<span class="go">        changed = green</span>
+<span class="go">        untracked = cyan</span>
+
+<span class="go">[core]</span>
+<span class="go">        whitespace=fix,-indent-with-non-tab,trailing-space,cr-at-eol</span>
+
+<span class="go">[alias]</span>
+<span class="go">        st = status</span>
+<span class="go">        ci = commit</span>
+<span class="go">        br = branch</span>
+<span class="go">        co = checkout</span>
+<span class="go">        df = diff</span>
+<span class="go">        dc = diff --cached</span>
+<span class="go">        lg = log -p</span>
+<span class="go">        pr = pull --rebase</span>
+<span class="go">        gr = log --all --graph --decorate --oneline</span>
+</pre></div>
+<p>&amp;nbsp;</p>
+<p>Simple and basic but I hope you'll have found something useful in it. If yes, you may want to know that I sometimes <a class="reference external" href="http://twitter.com/__fle__">tweet</a> and post <a class="reference external" href="/tag/git.html">stuff about GIT</a> !</p>
+<p>Thanks <a class="reference external" href="https://twitter.com/opidentica">opidentica</a> for having noticed the error!</p>
+	
+
+	</article>
+
+    <p>
+	<a href="https://twitter.com/share" class="twitter-share-button" data-via="" data-lang="en" data-size="large" data-related="">Tweet</a>
+	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+	</p>
+
+	<div class="comments">
+	<h2>Comments !</h2>
+	    <div id="disqus_thread"></div>
+	    <script type="text/javascript">
+	       var disqus_identifier = "git-tip-a-simple-gitconfig-file.html";
+	       (function() {
+	       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	       dsq.src = 'http://flegithubio.disqus.com/embed.js';
+	       (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	      })();
+	    </script>
+	</div>
+
+		  </div>	
+		  
+		  <div class="sidebar">
+		    <div class="sidebar-container" id="sidebar-container-fixed">
+
+	            <aside>
+	              <h2>About</h2>
+			      <p>
+                    Software engineer and trainer at Makina Corpus Nantes. Python, Django and GIT addict. Dance, sail, take photos.
+			      </p>
+			    </aside>
+
+  	          <nav>
+	            <h2>Categories</h2>
+	            <ul>
+	                <li ><a href="http://fle.github.io/category/development.html">development</a></li>
+	                <li ><a href="http://fle.github.io/category/geek-stuff.html">geek stuff</a></li>
+	                <li class="active"><a href="http://fle.github.io/category/quick-tips.html">quick tips</a></li>
+	            </ul>
+	          </nav>
+
+	            <aside>
+	            <h2>Social</h2>
+			      <ul class="social">
+				    <li><a href="http://www.linkedin.com/in/florentlebreton">linkedin</a><i></i></li>
+				    <li><a href="https://twitter.com/__fle__">twitter</a><i></i></li>
+				    <li><a href="https://plus.google.com/114836609462836450047">google</a><i></i></li>
+				    <li><a href="https://github.com/fle">github</a><i></i></li>
+			      </ul>
+			    </aside>
+
+	            <aside>
+	              <h2>Blogroll</h2>
+	              <ul>
+	                  <li><a href="http://makina-corpus.com/blog">Makina Corpus</a></li>
+	                  <li><a href="http://planetdjango.org">Planet Django</a></li>
+	                  <li><a href="http://regilero.github.io">Regliero's blog</a></li>
+	              </ul>
+	            </aside>
+	        </div>
+		  </div>
+
+	  </div>
+
+      <footer>
+		<p role="contentinfo">
+		  Florent Lebreton (fle) - Proudly powered by <a href="http://alexis.notmyidea.org/pelican/">pelican</a>. Theme <a href="https://github.com/fle/pelican-simplegrey">pelican-simplegrey</a>.
+    	</p>
+
+	  </footer>	
+
+	</div>
+	
+	  <script>
+		var _gaq=[['_setAccount','UA-18281356-9'],['_trackPageview']];
+		(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+		g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+		s.parentNode.insertBefore(g,s)}(document,'script'));
+	  </script>
+
+</body>
+</html>

@@ -1,0 +1,743 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Florent Lebreton</title><link href="http://fle.github.io/" rel="alternate"></link><link href="http://fle.github.io/feeds/all-en.atom.xml" rel="self"></link><id>http://fle.github.io/</id><updated>2014-02-12T00:00:00+01:00</updated><entry><title>An efficient GIT workflow for mid/long term projects</title><link href="http://fle.github.io/an-efficient-git-workflow-for-midlong-term-projects.html" rel="alternate"></link><updated>2014-02-12T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2014-02-12:an-efficient-git-workflow-for-midlong-term-projects.html</id><summary type="html">&lt;p&gt;Our &lt;a class="reference external" href="http://makina-corpus.com/realisations/application-de-gmao"&gt;full-web CAMM project&lt;/a&gt;
+at &lt;a class="reference external" href="http://makina-corpus.com"&gt;Makina Corpus&lt;/a&gt; has been going on for nearly two
+years and is running in production for over 18 months. I think it's my first project
+without any headache about our codebase and VCS management. So, I'll present our
+GIT workflow which has proven to be very effective for now.&lt;/p&gt;
+&lt;div class="section" id="context"&gt;
+&lt;h2&gt;Context&lt;/h2&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Several developers&lt;/li&gt;
+&lt;li&gt;Several staging/pre-production servers, several (non-synchronous) production servers&lt;/li&gt;
+&lt;li&gt;Monthly releases (more or less) with delivery on staging, then on production servers&lt;/li&gt;
+&lt;li&gt;On servers, basecode is directly pulled from the GIT repository with fabric&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class="section" id="rules"&gt;
+&lt;h2&gt;Rules&lt;/h2&gt;
+&lt;p&gt;To handle this, we have set some simple rules:&lt;/p&gt;
+&lt;div class="box center only-list"&gt;&lt;ol class="arabic simple"&gt;
+&lt;li&gt;One (and only one) maintainer, who manage GIT repository and releases&lt;/li&gt;
+&lt;li&gt;Never commit directly on &lt;tt class="docutils literal"&gt;master&lt;/tt&gt;&lt;/li&gt;
+&lt;li&gt;Never rebase &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; on any branch&lt;/li&gt;
+&lt;li&gt;Do not get out of planned workflow&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;&lt;/div&gt;
+&lt;div class="section" id="workflow"&gt;
+&lt;h2&gt;Workflow&lt;/h2&gt;
+&lt;div class="section" id="master-branch"&gt;
+&lt;h3&gt;Master branch&lt;/h3&gt;
+&lt;p&gt;Our branch &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; is the common trunk and simply contains all the codebase of
+the next release. Since we don't work directly on it, it evolves mainly with merges.&lt;/p&gt;
+&lt;img alt="Workflow GIT 1" src="/images/010-gw1.png" /&gt;
+&lt;/div&gt;
+&lt;div class="section" id="development-branches"&gt;
+&lt;h3&gt;Development branches&lt;/h3&gt;
+&lt;p&gt;When a developer starts a new feature or a bugfix, he creates a new branch from
+&lt;tt class="docutils literal"&gt;master&lt;/tt&gt; &lt;tt class="docutils literal"&gt;HEAD&lt;/tt&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git checkout -b featureA
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;featureA&lt;span class="o"&gt;)&lt;/span&gt; git add -m &lt;span class="s2"&gt;&amp;quot;featureA part 1&amp;quot;&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;featureA&lt;span class="o"&gt;)&lt;/span&gt; git add -m &lt;span class="s2"&gt;&amp;quot;featureA part 2&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;img alt="Workflow GIT 2" src="/images/010-gw2.png" /&gt;
+&lt;p&gt;He follows branch &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; evolution and regularly ensures his code still works,
+by rebasing his branch &lt;tt class="docutils literal"&gt;featureA&lt;/tt&gt; on branch &lt;tt class="docutils literal"&gt;master&lt;/tt&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;featureA&lt;span class="o"&gt;)&lt;/span&gt; git rebase master
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;When his developments are done (commits &lt;em&gt;fa1&lt;/em&gt; / &lt;em&gt;fa2&lt;/em&gt; in schema below), he does a last rebase. Thanks to this:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;he ensures that the maintainer will be able to merge easily (maintainer should not need to read code deeply and search why there are conflicts)&lt;/li&gt;
+&lt;li&gt;if tests pass on development branch after rebase, they should pass on &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; after merge, so &lt;strong&gt;we ensure that branch ``master`` is always working well&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Possibly, it will be the good time to
+&lt;a class="reference external" href="http://fle.github.io/git-tip-keep-your-branch-clean-with-fixup-and-autosquash.html"&gt;clean the development branch&lt;/a&gt;
+to let it neat just when it is finished.&lt;/p&gt;
+&lt;img alt="Workflow GIT 3" src="/images/010-gw3.png" /&gt;
+&lt;p&gt;The maintainer can now merge this branch in &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; peacefully, without big
+conflict troubles. As the maintainer, I like to use &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;no-ff&lt;/span&gt;&lt;/tt&gt; option to force a
+&lt;em&gt;merge commit&lt;/em&gt;, so &lt;strong&gt;history can stay really readable&lt;/strong&gt; (we easily see where the
+branch has started and where it has been merged).&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git merge --no-ff featureA
+&lt;/pre&gt;&lt;/div&gt;
+&lt;img alt="Workflow GIT 4" src="/images/010-gw4.png" /&gt;
+&lt;p&gt;Now that the branch has been merged, the developer should remove his development
+branch.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git branch -d featureA
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git push origin :featureA
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="stable-branches"&gt;
+&lt;h3&gt;Stable branches&lt;/h3&gt;
+&lt;p&gt;When we prepare a release, we update CHANGELOG (with our workflow, a
+&lt;tt class="docutils literal"&gt;git log &lt;span class="pre"&gt;--oneline&lt;/span&gt;&lt;/tt&gt; should be quite clear to do that) and tag the branch
+&lt;tt class="docutils literal"&gt;master&lt;/tt&gt; (optional), then we start a stable branch.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git tag stable1.0
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git checkout -b stable1.0
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;stable1.0&lt;span class="o"&gt;)&lt;/span&gt; git push origin stable1.0
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This branch is deployed on different servers.&lt;/p&gt;
+&lt;p&gt;While development goes on, we possibly have to do some hotfixes (for example: commit
+&lt;em&gt;hf1&lt;/em&gt; in schema below), that must be sent in production quickly.
+These hotfixes are done directly on concerned stable branch.&lt;/p&gt;
+&lt;img alt="Workflow GIT 5" src="/images/010-gw5.png" /&gt;
+&lt;p&gt;Regularly, the maintainer merges stable branch in &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; to bring back these
+commits. This action is particularly important before the next release.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git merge --no-ff stable1.0
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We found this method really useful because:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;each stable branch has its own life and doesn't take care of branch &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; evolution, so &lt;strong&gt;we can hotfix stable branche freely and without stress&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;we ensure that no hotfix commit has been lost before next release (avoid regressions)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class="section" id="a-complete-history-example"&gt;
+&lt;h3&gt;A complete history example&lt;/h3&gt;
+&lt;img alt="Workflow GIT 6" src="/images/010-gw6.png" /&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="conclusion"&gt;
+&lt;h2&gt;Conclusion&lt;/h2&gt;
+&lt;p&gt;Of course, there are several GIT workflows which can be very efficient, but we found
+many advantages in working with this method, and no real issue:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Branch &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; is always clean and working well&lt;/li&gt;
+&lt;li&gt;Developers don't care about GIT whole workflow&lt;/li&gt;
+&lt;li&gt;We can fix stable branch without asking ourselves what happened on &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; since last release&lt;/li&gt;
+&lt;li&gt;We ensure that each stable release contains new features and possible fixes&lt;/li&gt;
+&lt;li&gt;Always working with branches and using``-no-ff``option make history really clear !&lt;/li&gt;
+&lt;li&gt;This workflow is scalable (number of developers or branches doesn't really matter)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If you liked this article, stay tuned ! I sometimes &lt;a class="reference external" href="http://twitter.com/__fle__"&gt;tweet&lt;/a&gt; and post &lt;a class="reference external" href="/tag/git.html"&gt;GIT articles&lt;/a&gt; !&lt;/p&gt;
+&lt;p&gt;[FR] Ce billet en français sur le blog de Makina Corpus : &lt;a class="reference external" href="http://makina-corpus.com/blog/metier/un-workflow-git-efficace-pour-les-projets-a-moyen-long-terme"&gt;Un workflow GIT efficace pour les projets à moyen/long terme&lt;/a&gt; !&lt;/p&gt;
+&lt;style type="text/css"&gt;
+    article img {
+        display: block;
+        margin: 0 auto;
+    }
+&lt;/style&gt;&lt;/div&gt;
+</summary><category term="git"></category></entry><entry><title>GIT tip : A simple .gitconfig file</title><link href="http://fle.github.io/git-tip-a-simple-gitconfig-file.html" rel="alternate"></link><updated>2014-02-04T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2014-02-04:git-tip-a-simple-gitconfig-file.html</id><summary type="html">&lt;p&gt;As several friends have asked me this, here is my &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;~/.gitconfig&lt;/span&gt;&lt;/tt&gt; base file.&lt;/p&gt;
+&lt;p&gt;Nothing special, just a few aliases and some syntax highlighting :).&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="go"&gt;[user]&lt;/span&gt;
+&lt;span class="go"&gt;        name = Florent Lebreton&lt;/span&gt;
+&lt;span class="go"&gt;        email = florentlebreton@free.fr&lt;/span&gt;
+&lt;span class="go"&gt;[color]&lt;/span&gt;
+&lt;span class="go"&gt;        ui = auto&lt;/span&gt;
+
+&lt;span class="go"&gt;[color &amp;quot;branch&amp;quot;]&lt;/span&gt;
+&lt;span class="go"&gt;        current = yellow reverse&lt;/span&gt;
+&lt;span class="go"&gt;        local = yellow&lt;/span&gt;
+&lt;span class="go"&gt;        remote = green&lt;/span&gt;
+
+&lt;span class="go"&gt;[color &amp;quot;diff&amp;quot;]&lt;/span&gt;
+&lt;span class="go"&gt;        meta = yellow bold&lt;/span&gt;
+&lt;span class="go"&gt;        frag = magenta bold&lt;/span&gt;
+&lt;span class="go"&gt;        old = red bold&lt;/span&gt;
+&lt;span class="go"&gt;        new = green bold&lt;/span&gt;
+&lt;span class="go"&gt;        whitespace = red reverse&lt;/span&gt;
+
+&lt;span class="go"&gt;[color &amp;quot;status&amp;quot;]&lt;/span&gt;
+&lt;span class="go"&gt;        added = yellow&lt;/span&gt;
+&lt;span class="go"&gt;        changed = green&lt;/span&gt;
+&lt;span class="go"&gt;        untracked = cyan&lt;/span&gt;
+
+&lt;span class="go"&gt;[core]&lt;/span&gt;
+&lt;span class="go"&gt;        whitespace=fix,-indent-with-non-tab,trailing-space,cr-at-eol&lt;/span&gt;
+
+&lt;span class="go"&gt;[alias]&lt;/span&gt;
+&lt;span class="go"&gt;        st = status&lt;/span&gt;
+&lt;span class="go"&gt;        ci = commit&lt;/span&gt;
+&lt;span class="go"&gt;        br = branch&lt;/span&gt;
+&lt;span class="go"&gt;        co = checkout&lt;/span&gt;
+&lt;span class="go"&gt;        df = diff&lt;/span&gt;
+&lt;span class="go"&gt;        dc = diff --cached&lt;/span&gt;
+&lt;span class="go"&gt;        lg = log -p&lt;/span&gt;
+&lt;span class="go"&gt;        pr = pull --rebase&lt;/span&gt;
+&lt;span class="go"&gt;        gr = log --all --graph --decorate --oneline&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;&amp;amp;nbsp;&lt;/p&gt;
+&lt;p&gt;Simple and basic but I hope you'll have found something useful in it. If yes, you may want to know that I sometimes &lt;a class="reference external" href="http://twitter.com/__fle__"&gt;tweet&lt;/a&gt; and post &lt;a class="reference external" href="/tag/git.html"&gt;stuff about GIT&lt;/a&gt; !&lt;/p&gt;
+&lt;p&gt;Thanks &lt;a class="reference external" href="https://twitter.com/opidentica"&gt;opidentica&lt;/a&gt; for having noticed the error!&lt;/p&gt;
+</summary><category term="git"></category></entry><entry><title>Combine LDAP and classical authentication in django</title><link href="http://fle.github.io/combine-ldap-and-classical-authentication-in-django.html" rel="alternate"></link><updated>2013-12-20T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2013-12-20:combine-ldap-and-classical-authentication-in-django.html</id><summary type="html">&lt;p&gt;Still in our CAMM project &lt;a class="reference external" href="http://makina-corpus.com/realisations/application-de-gmao"&gt;JOB&lt;/a&gt; at &lt;a class="reference external" href="http://makina-corpus.com"&gt;Makina Corpus&lt;/a&gt;, we needed to provide an authentication system through a LDAP server. The module &lt;a class="reference external" href="https://pypi.python.org/pypi/django-auth-ldap"&gt;django-auth-ldap&lt;/a&gt; does most of work itself but we decided to combine this LDAP authentication with the classical django authentication for two reasons:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;keep possibility to create users only in django without having them in the LDAP directory (mainly for &lt;cite&gt;superusers&lt;/cite&gt;);&lt;/li&gt;
+&lt;li&gt;be able to fallback on django authentication for all users in case of a LDAP server failure.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;So to handle this, we have to:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;differentiate LDAP directory users from django database users;&lt;/li&gt;
+&lt;li&gt;store password of LDAP users in django to be able to switch on classical authentication;&lt;/li&gt;
+&lt;li&gt;implement two custom authentication backends.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="section" id="user-model"&gt;
+&lt;h2&gt;User model&lt;/h2&gt;
+&lt;p&gt;We just implement a custom model user with a boolean &lt;tt class="docutils literal"&gt;from_ldap&lt;/tt&gt; to diffentiate LDAP users from classical django users.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;MyUser&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;AbstractUser&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;from_ldap&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;models&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;BooleanField&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+        &lt;span class="n"&gt;_&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;LDAP user&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+        &lt;span class="n"&gt;editable&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="n"&gt;default&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="ldap-authentication-backend"&gt;
+&lt;h2&gt;LDAP authentication backend&lt;/h2&gt;
+&lt;p&gt;This LDAP backend has two goals :&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Save user password in django database, thus he'll be able to log in django if LDAP authentication backend is disabled;&lt;/li&gt;
+&lt;li&gt;Force &lt;tt class="docutils literal"&gt;from_ldap&lt;/tt&gt; field to &lt;tt class="docutils literal"&gt;True&lt;/tt&gt; when a user is created by this way.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django_auth_ldap.backend&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;LDAPBackend&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.contrib.auth&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;get_user_model&lt;/span&gt;
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;MyLDAPBackend&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;LDAPBackend&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; A custom LDAP authentication backend &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;authenticate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Overrides LDAPBackend.authenticate to save user password in django &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+        &lt;span class="n"&gt;user&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;LDAPBackend&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;authenticate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="c"&gt;# If user has successfully logged, save his password in django database&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;set_password&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;save&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;user&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;get_or_create_user&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;ldap_user&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Overrides LDAPBackend.get_or_create_user to force from_ldap to True &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;kwargs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;username&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;defaults&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;from_ldap&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="n"&gt;user_model&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;get_user_model&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;user_model&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_or_create&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;**&lt;/span&gt;&lt;span class="n"&gt;kwargs&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="classical-authentication-backend"&gt;
+&lt;h2&gt;Classical authentication backend&lt;/h2&gt;
+&lt;p&gt;We override &lt;tt class="docutils literal"&gt;django.contrib.auth.backends.ModelBackend&lt;/tt&gt; to ensure LDAP users can't logged in with this one if &lt;tt class="docutils literal"&gt;MyLDAPBackend&lt;/tt&gt; is available.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.contrib.auth&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;get_backends&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;get_user_model&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.contrib.auth.backends&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;ModelBackend&lt;/span&gt;
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;MyAuthBackend&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ModelBackend&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; A custom authentication backend overriding django ModelBackend &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+    &lt;span class="nd"&gt;@staticmethod&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_is_ldap_backend_activated&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Returns True if MyLDAPBackend is activated &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;MyLDAPBackend&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;b&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;__class__&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;b&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;get_backends&lt;/span&gt;&lt;span class="p"&gt;()]&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;authenticate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Overrides ModelBackend to refuse LDAP users if MyLDAPBackend is activated &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_is_ldap_backend_activated&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+            &lt;span class="n"&gt;user_model&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;get_user_model&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+            &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;user_model&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;from_ldap&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;except&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
+
+        &lt;span class="n"&gt;user&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ModelBackend&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;authenticate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;user&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="django-settings-and-fallback-solution"&gt;
+&lt;h2&gt;Django settings and fallback solution&lt;/h2&gt;
+&lt;p&gt;Normally, we have our two backends activated :&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;LDAP users can only connect through &lt;tt class="docutils literal"&gt;MyLDAPBackend&lt;/tt&gt;;&lt;/li&gt;
+&lt;li&gt;Django users can connect through &lt;tt class="docutils literal"&gt;MyAuthBackend&lt;/tt&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;AUTHENTICATION_BACKENDS&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;accounts.backends.MyLDAPBackend&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;accounts.backends.MyAuthBackend&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;In case of a LDAP directory failure, we just have to disable &lt;tt class="docutils literal"&gt;MyLDAPBackend&lt;/tt&gt; and everybody can connect with &lt;tt class="docutils literal"&gt;MyAuthBackend&lt;/tt&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;AUTHENTICATION_BACKENDS&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;
+    &lt;span class="c"&gt;#&amp;#39;accounts.backends.MyLDAPBackend&amp;#39;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;accounts.backends.MyAuthBackend&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Thanks &lt;a class="reference external" href="http://twitter.com/leplatrem"&gt;leplatrem&lt;/a&gt; for review!&lt;/p&gt;
+&lt;p&gt;[FR] &lt;a class="reference external" href="http://makina-corpus.com/blog/metier/combiner-une-authentification-ldap-et-lauthentification-classique-django"&gt;Ce billet en français&lt;/a&gt; sur le blog de Makina Corpus !&lt;/p&gt;
+&lt;/div&gt;
+</summary><category term="django"></category><category term="ldap"></category></entry><entry><title>GIT tip : Keep your branch clean with fixup and autosquash</title><link href="http://fle.github.io/git-tip-keep-your-branch-clean-with-fixup-and-autosquash.html" rel="alternate"></link><updated>2013-12-04T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2013-12-04:git-tip-keep-your-branch-clean-with-fixup-and-autosquash.html</id><summary type="html">&lt;p&gt;Who is not tired of committing a &amp;quot;Remove pdb&amp;quot; or a &amp;quot;Fix a typo&amp;quot; few minutes or hours after committing a clean feature ? A few time ago, I discovered two useful options in GIT that work together : &lt;tt class="docutils literal"&gt;git commit &lt;span class="pre"&gt;--fixup&lt;/span&gt;&lt;/tt&gt; and &lt;tt class="docutils literal"&gt;git rebase &lt;span class="pre"&gt;--autosquash&lt;/span&gt;&lt;/tt&gt;. With these, you can easily merge little fixes with the original feature and keep your branch clean.&lt;/p&gt;
+&lt;p&gt;Preferably, you won't use it in a stable or master branch, because rebase rewrites history and can create a big mess, mainly if project counts several developers. It rather can be convenient to clean a development branch before merging it in master.&lt;/p&gt;
+&lt;div class="section" id="fixup-autosquash"&gt;
+&lt;h2&gt;--fixup &amp;amp; --autosquash&lt;/h2&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;&lt;tt class="docutils literal"&gt;git commit &lt;span class="pre"&gt;--fixup&lt;/span&gt; &amp;lt;commit&amp;gt;&lt;/tt&gt; automatically marks your commit as a fix of a previous commit&lt;/li&gt;
+&lt;li&gt;&lt;tt class="docutils literal"&gt;git rebase &lt;span class="pre"&gt;-i&lt;/span&gt; &lt;span class="pre"&gt;--autosquash&lt;/span&gt;&lt;/tt&gt; automatically organize merging of these fixup commits and associated normal commits&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class="section" id="example"&gt;
+&lt;h2&gt;Example&lt;/h2&gt;
+&lt;p&gt;Take a git repos with a branch &lt;cite&gt;dev&lt;/cite&gt;. You intend to commit features A and B:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git add featureA
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git commit -m &lt;span class="s2"&gt;&amp;quot;Feature A is done&amp;quot;&lt;/span&gt;
+&lt;span class="go"&gt;[dev fb2f677] Feature A is done&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git add featureB
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git commit -m &lt;span class="s2"&gt;&amp;quot;Feature B is done&amp;quot;&lt;/span&gt;
+&lt;span class="go"&gt;[dev 733e2ff] Feature B is done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Your work is in progress and you find minor mistakes in Feature A : it's time to use &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;--fixup&lt;/span&gt;&lt;/tt&gt; option !&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git add featureA                &lt;span class="c"&gt;# you&amp;#39;ve removed a pdb : shameful commit&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git commit --fixup fb2f677
+&lt;span class="go"&gt;[dev c5069d5] fixup! Feature A is done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Here, you see that GIT automatically retrieved featureA commit message prefixed by fixup!.&lt;/p&gt;
+&lt;p&gt;All work is done, let's see the log:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git log --oneline
+&lt;span class="go"&gt;c5069d5 fixup! Feature A is done&lt;/span&gt;
+&lt;span class="go"&gt;733e2ff Feature B is done&lt;/span&gt;
+&lt;span class="go"&gt;fb2f677 Feature A is done&lt;/span&gt;
+&lt;span class="go"&gt;ac5db87 Previous commit&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now, you want to clean your branch before merging it : it's time to use &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;--autosquash&lt;/span&gt;&lt;/tt&gt; option !&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git rebase -i --autosquash ac5db87
+&lt;span class="go"&gt;pick fb2f677 Feature A is done&lt;/span&gt;
+&lt;span class="go"&gt;fixup c5069d5 fixup! Feature A is done&lt;/span&gt;
+&lt;span class="go"&gt;fixup c9e138f fixup! Feature A is done&lt;/span&gt;
+&lt;span class="go"&gt;pick 733e2ff Feature B is done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This command has opened your editor with lines above. Just save &amp;amp; quit and ... :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git log --oneline
+&lt;span class="go"&gt;ff4de2a Feature B is done&lt;/span&gt;
+&lt;span class="go"&gt;5478cee Feature A is done&lt;/span&gt;
+&lt;span class="go"&gt;ac5db87 Previous commit&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Your shameful commit has been merged properly with the original feature. It's just a shorcut for something you could do otherwise but I find it very convenient :).&lt;/p&gt;
+&lt;p&gt;That's all folks !&lt;/p&gt;
+&lt;p&gt;EDIT : &lt;tt class="docutils literal"&gt;git rebase i &lt;span class="pre"&gt;&amp;lt;after-this-commit&amp;gt;&lt;/span&gt;&lt;/tt&gt; must be launched with as argument &lt;cite&gt;the last commit you want to retain as-is&lt;/cite&gt;, not the first one you want to change.&lt;/p&gt;
+&lt;p&gt;Thanks &lt;a class="reference external" href="http://twitter.com/regilero"&gt;regilero&lt;/a&gt; &amp;amp; &lt;a class="reference external" href="http://twitter.com/SebCorbin"&gt;SebCorbin&lt;/a&gt; for reviewing!&lt;/p&gt;
+&lt;/div&gt;
+</summary><category term="git"></category></entry><entry><title>Capturez une signature manuscrite avec django-jsignature</title><link href="http://fle.github.io/capturez-une-signature-manuscrite-avec-django-jsignature.html" rel="alternate"></link><updated>2013-11-27T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2013-11-27:capturez-une-signature-manuscrite-avec-django-jsignature.html</id><summary type="html">&lt;p&gt;Aujourd'hui, tous les documents (ou presque) générés par l'activité d'une entreprise sont créés informatiquement.
+Dans certains cas, l'impression d'un document est nécessaire uniquement pour apposer une signature (de l'envoyeur, du destinataire, ou autre).&lt;/p&gt;
+&lt;p&gt;Dans le cadre d'un projet de &lt;a class="reference external" href="http://makina-corpus.com/realisations/application-de-gmao"&gt;GMAO full web&lt;/a&gt; chez &lt;a class="reference external" href="http://makina-corpus.com"&gt;Makina&lt;/a&gt;, nous avons mis en place, pour les techniciens itinérants, un formulaire de saisie de rapport signé sur tablette tactile.&lt;/p&gt;
+&lt;p&gt;Ce process, réalisé sur place et immédiatement après l'intervention, permet un gain de temps important en évitant les doubles saisies, les impressions et les échanges mails et courriers.&lt;/p&gt;
+&lt;p&gt;Bien que la signature &amp;quot;électronique-manuscrite&amp;quot; n'est pas une preuve totalement valable aux yeux de la loi, pouvoir apposer une signature via une tablette tactile peut être vraiment utile et éviter des impressions et des échanges inutiles :).&lt;/p&gt;
+&lt;p&gt;La fonctionnalité de signature a été réalisée avec jSignature, wrappée dans une app django.&lt;/p&gt;
+&lt;div class="section" id="jsignature-et-django-jsignature"&gt;
+&lt;h2&gt;jSignature et django-jsignature&lt;/h2&gt;
+&lt;p&gt;&lt;a class="reference external" href="https://github.com/brinley/jSignature/blob/master/README.md"&gt;jSignature&lt;/a&gt; est un plugin jQuery qui transforme un simple &amp;lt;div&amp;gt; en cadre prêt à recevoir une signature déssinée à la souris ou mieux, sur écran tactile. Quelques options de configuration sont disponibles et l'export de la signature est possible dans différents formats (image base/64, image base/30, json, ...).&lt;/p&gt;
+&lt;p&gt;Nous avons publié &lt;a class="reference external" href="https://github.com/fle/django-jsignature"&gt;django-jsignature&lt;/a&gt;, une petite app django permettant :&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;d'avoir facilement un champ &amp;quot;signature&amp;quot; dans un formulaire django (avec un field et un widget);&lt;/li&gt;
+&lt;li&gt;de faire le rendu de l'image en python (avec Pillow);&lt;/li&gt;
+&lt;li&gt;de stocker la signature (json) et la date de signature dans un modèle (champs fournis par un mixin);&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Le billet complet est sur le &lt;a class="reference external" href="http://makina-corpus.com/blog/metier/signez-vos-documents-sur-tablette-tactile-avec-django-jsignature"&gt;blog de Makina&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Le code est dispo sur &lt;a class="reference external" href="https://github.com/fle/django-jsignature.git"&gt;github&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+</summary><category term="django"></category><category term="jsignature"></category></entry><entry><title>Quand le poney rencontre le lion - Djangocong Belfort 2013</title><link href="http://fle.github.io/quand-le-poney-rencontre-le-lion-djangocong-belfort-2013.html" rel="alternate"></link><updated>2013-09-29T00:00:00+02:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2013-09-29:quand-le-poney-rencontre-le-lion-djangocong-belfort-2013.html</id><summary type="html">&lt;p&gt;Cette année la Djangocong avait perdu son accent du sud pour partir à l'aventure et rencontrer le lion de Belfort.
+L'aventure est un mot pas si mal choisi quand on vient de Nantes car j'en ai profité pour tester tous les moyens de transport existant (ou presque) :&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Tram 2 [Nantes] - &lt;tt class="docutils literal"&gt;12h30&lt;/tt&gt;&lt;/li&gt;
+&lt;li&gt;Tram 1 [Nantes]&lt;/li&gt;
+&lt;li&gt;TGV [Nantes -&amp;gt; Paris]&lt;/li&gt;
+&lt;li&gt;Bus 91 [Montparnasse -&amp;gt; Gare de Lyon]&lt;/li&gt;
+&lt;li&gt;Lyria [Paris -&amp;gt; Belfort-Montbéliard TGV]&lt;/li&gt;
+&lt;li&gt;Navette [Belfort-Monbeliard TGV -&amp;gt; Montbéliard] (OK là je me suis un peu perdu)&lt;/li&gt;
+&lt;li&gt;TER [Montbeliard -&amp;gt; Belfort]&lt;/li&gt;
+&lt;li&gt;Pieds [Gare -&amp;gt; Hotel] - &lt;tt class="docutils literal"&gt;20h45&lt;/tt&gt; o/&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Maiiiis ça valait le coup, la liste non ordonnée et non exhaustive de &amp;quot;Pourquoi il faut aller au 'congs ?&amp;quot;:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Les gens sont cools&lt;/li&gt;
+&lt;li&gt;Ça rassure (&amp;quot;Ha tiens il n'y a pas que moi qui ai ce problème !&amp;quot;)&lt;/li&gt;
+&lt;li&gt;Ça motive (&amp;quot;Wouah trop cool ces projets et ces technos qui bougent !&amp;quot;)&lt;/li&gt;
+&lt;li&gt;On découvre plein d'outils pratiques : &lt;a class="reference external" href="http://pytest.org"&gt;pytest&lt;/a&gt;, les &lt;a class="reference external" href="https://github.com/nyergler/nested-formset"&gt;nested formsets&lt;/a&gt;, la nouvelle lib django &lt;a class="reference external" href="https://docs.djangoproject.com/en/dev/topics/db/transactions/"&gt;atomic&lt;/a&gt;, ...&lt;/li&gt;
+&lt;li&gt;On boit de la bière et on mange bien&lt;/li&gt;
+&lt;li&gt;On geek dans l'amphi, en classe, dans le train, ...&lt;/li&gt;
+&lt;li&gt;...&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Ça c'était pour les anecdotes perso : le vrai retour est sur le &lt;a class="reference external" href="http://makina-corpus.com/blog/metier/retour-de-la-djangocong-belfort-2013"&gt;blog de Makina Corpus&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Merci aux organisateurs et à l'année prochaine o/.&lt;/p&gt;
+</summary><category term="django"></category></entry><entry><title>Playing with LiveServerTestCase and Selenium</title><link href="http://fle.github.io/playing-with-liveservertestcase-and-selenium.html" rel="alternate"></link><updated>2012-11-25T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2012-11-25:playing-with-liveservertestcase-and-selenium.html</id><summary type="html">&lt;p&gt;At &amp;quot;Djangocon Tolosa&amp;quot;, Julien phalip spoke about a new feature in django 1.4, LiveServerTestCase. A LiveServerTestCase launches a true HTTP server and gives a way to make HTTP requests in test cases. It can be useful to test REST API over a full HTTP protocol stack. Or, associated with Selenium, it can be powerful to make functionnal tests, on a view using ajax for example.&lt;/p&gt;
+&lt;p&gt;Let's try it with a simple usecase :
+* a view which displays 10 first results of a dummy search in a &amp;lt;table&amp;gt;
+* a view which returns dynamically the 5 next results
+* a button wich launches an ajax request on this second view to fetch 5 more results and append it to the current list&lt;/p&gt;
+&lt;p&gt;Here is a simple code extract of each part :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# urls.py&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;
+&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;regex&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;r&amp;#39;^results_page$&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="n"&gt;view&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;results_page&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;results_page&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;regex&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;r&amp;#39;^get_more_lines$&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="n"&gt;view&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;get_more_lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;get_more_lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;
+
+&lt;span class="c"&gt;# views.py&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;results_page&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Renders a page with result list in a &amp;lt;table&amp;gt; &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;get_more_lines&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Returns dynamically 5 more lines to be displayed in table &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="x"&gt;# template.html&lt;/span&gt;
+&lt;span class="x"&gt;...&lt;/span&gt;
+&lt;span class="x"&gt;&amp;lt;table id=&amp;quot;results&amp;quot;&amp;gt;&lt;/span&gt;
+&lt;span class="x"&gt;  &lt;/span&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nv"&gt;r&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="nv"&gt;results&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+&lt;span class="x"&gt;    &amp;lt;tr&amp;gt;&amp;lt;td&amp;gt;&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;r&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;&amp;lt;/td&amp;gt;&amp;lt;/tr&amp;gt;&lt;/span&gt;
+&lt;span class="x"&gt;  &lt;/span&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;endfor&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+&lt;span class="x"&gt;&amp;lt;/table&amp;gt;&lt;/span&gt;
+&lt;span class="x"&gt;&amp;lt;a id=&amp;quot;more-lines&amp;quot; href=&amp;quot;#&amp;quot;&amp;gt;Get more lines&amp;lt;/a&amp;gt;&lt;/span&gt;
+&lt;span class="x"&gt;...&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c1"&gt;// scripts.js&lt;/span&gt;
+&lt;span class="p"&gt;...&lt;/span&gt;
+&lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;#more-lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="nx"&gt;click&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kd"&gt;function&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;e&lt;/span&gt;&lt;span class="p"&gt;){&lt;/span&gt;
+  &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;ajax&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt;
+    &lt;span class="nx"&gt;url&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;/get_more_lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="nx"&gt;success&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="kd"&gt;function&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;response&lt;/span&gt;&lt;span class="p"&gt;){&lt;/span&gt;
+      &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;response&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;#results&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="nx"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;response&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+      &lt;span class="p"&gt;}&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;#more-lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="nx"&gt;addClass&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;disabled&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+      &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+  &lt;span class="p"&gt;});&lt;/span&gt;
+&lt;span class="p"&gt;});&lt;/span&gt;
+&lt;span class="p"&gt;...&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Note : code above is incomplete but interesting part is below.&lt;/p&gt;
+&lt;p&gt;Now we want to test it little bit. For example :&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Ensure that table contains 10 lines at begining&lt;/li&gt;
+&lt;li&gt;Ensure that table contains 15 lines after click on &amp;quot;Get more lines&amp;quot; button&lt;/li&gt;
+&lt;li&gt;Ensure that button becomes disabled if there is no more result&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;It's not really a unit test for js function or django view. Looks like more a quick functional test.&lt;/p&gt;
+&lt;p&gt;Here is the corresponding LiveServerTestCase :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;selenium.webdriver.firefox.webdriver&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;WebDriver&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;selenium.webdriver.support.wait&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;WebDriverWait&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.utils.unittest&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;SkipTest&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.test&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;LiveServerTestCase&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.core.urlresolvers&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;reverse&lt;/span&gt;
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;ResultListTestCase&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;LiveServerTestCase&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+
+    &lt;span class="nd"&gt;@classmethod&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;setUpClass&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Instantiate selenium driver instance &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;WebDriver&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="nb"&gt;super&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ResultListTestCase&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;setUpClass&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="nd"&gt;@classmethod&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;tearDownClass&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Quit selenium driver instance &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quit&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="nb"&gt;super&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;BaseSeleniumWebDriverTestCase&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;tearDownClass&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_wait_ajax_complete&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Wait until ajax request is completed &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;WebDriverWait&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;until&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+            &lt;span class="k"&gt;lambda&lt;/span&gt; &lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;execute_script&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;return jQuery.active == 0&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_has_css_class&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;selector&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;klass&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;        Returns True if the element identified by `selector`&lt;/span&gt;
+&lt;span class="sd"&gt;        has the CSS class : `klass`.&lt;/span&gt;
+&lt;span class="sd"&gt;        &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find_element_by_css_selector&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;selector&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_attribute&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;class&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;klass&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;test_get_more_lines&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Test result list and &amp;#39;get more lines&amp;#39; button &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+        &lt;span class="c"&gt;# Display tested page&lt;/span&gt;
+        &lt;span class="n"&gt;url&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;reverse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;results_page&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;live_server_url&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="c"&gt;# Ensure 10 lines are displayed&lt;/span&gt;
+        &lt;span class="n"&gt;rows_length&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;lambda&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find_elements_by_css_selector&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;#results tr&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rows_length&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="c"&gt;# Click on &amp;#39;get-more-lines&amp;#39; button&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find_element_by_id&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;get-more-lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;click&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;wait_ajax_complete&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rows_length&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt; &lt;span class="mi"&gt;15&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="c"&gt;# Click again and check button is disabled&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find_element_by_id&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;get-more-lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;click&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;wait_ajax_complete&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="n"&gt;disabled&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;has_css_class&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;#increase-history&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;disabled&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertTrue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;disabled&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;On my current project, tests are ran by Jenkins on a headless server, so Selenium can't launch a firefox.
+Awaiting for a specific configuration, I wrapped creation of WebDriver in a try/except like this :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;ResultListTestCase&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;LiveServerTestCase&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+
+    &lt;span class="nd"&gt;@classmethod&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;setUpClass&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;WebDriver&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+            &lt;span class="nb"&gt;super&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ResultListTestCase&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;setUpClass&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;raise&lt;/span&gt; &lt;span class="n"&gt;SkipTest&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Selenium webdriver is not operational&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This is just a really simple first test but this feature seems pretty cool IMHO :-).&lt;/p&gt;
+</summary><category term="django"></category></entry><entry><title>De retour de Drupagora 2011</title><link href="http://fle.github.io/de-retour-de-drupagora-2011.html" rel="alternate"></link><updated>2011-11-18T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2011-11-18:de-retour-de-drupagora-2011.html</id><summary type="html">&lt;p&gt;Je reviens de la première édition de Drupagora, à Paris, qui se veut plus oriéntée chefs de projet/décideurs que les habituels DrupalCamps de geeks.
+Au final, une formule plutôt satisfaisante : Conférences intéressantes, beaucoup de retours d'expérience et un peu de technique quand même (ouf !).&lt;/p&gt;
+&lt;div class="section" id="mobilize-don-t-miniaturize"&gt;
+&lt;h2&gt;Mobilize, don't miniaturize&lt;/h2&gt;
+&lt;div class="section" id="un-premier-constat-de-base"&gt;
+&lt;h3&gt;Un premier constat de base&lt;/h3&gt;
+&lt;p&gt;Le mobinaute :
+* est boulimique d'information, très rapide, très volatile
+* navigue avec une connexion lente et instable
+* navigue sur un device peu performant&lt;/p&gt;
+&lt;p&gt;Il faut donc faire : léger, simple, concis, fontionnel&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class="section" id="la-mauvaise-idee-a-la-mode-une-seule-url-media-queries"&gt;
+&lt;h3&gt;1. La mauvaise idée à la mode : une seule URL + Media Queries&lt;/h3&gt;
+&lt;p&gt;Le responsive design n'est pas la panacée. L'idée est tentante, mais MediaQueries fait seulement de la réorganisation d'affichage, ce qui ne règle pas les problèmes d'ergonomie et de performances :
+* le volume de données transféré est trop gros : DOM (surtout avec Drupal), images, js, css
+* la consommation CPU est trop importante : scripts js et animations
+* le contenu est trop long : articles trop longs, trop de blocs, ...&lt;/p&gt;
+&lt;p&gt;=&amp;gt; Cette solution est donc à réserver pour un site simple et léger (évenementiel par exemple)&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class="section" id="une-solution-plus-aboutie-2-url-2-themes"&gt;
+&lt;h3&gt;2. Une solution plus aboutie : 2 URL + 2 themes&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p class="first"&gt;(MobileTools + Domains + DomainThemes + DomainAccess + DomainViews + Panels, TinySrc)&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p class="first"&gt;Une URL de base pour le site sur ordinateur (rien de particulier à ce niveau)&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p class="first"&gt;Une URL pour device mobile. Quelques recommandations pour le version mobile :&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Une des idées importantes est de profiter de la modernité des navigateurs mobiles (CSS3, HTML5, Storage) !!!&lt;/p&gt;
+&lt;p&gt;Au niveau du thème&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;surcharger les .tpl pour alléger le DOM (DomainThemes)&lt;/li&gt;
+&lt;li&gt;penser au responsive design pour les différents devices (OmegaTheme ou AdaptiveTheme + PanelEverywhere + TinySrc)&lt;/li&gt;
+&lt;li&gt;éviter au maximum le javascript et la manipulation du DOM (consommation CPU importante) =&amp;gt; Penser au CSS3, notamment à Translate3D (qui utilise le GPU et donc soulage le CPU).&lt;/li&gt;
+&lt;li&gt;pour les formulaires, l'audio, la vidéo, éviter là encore la javascript / Flash =&amp;gt; Penser au HTML5&lt;/li&gt;
+&lt;li&gt;pour le js réellement nécessaire, se limiter à DOM Selector API ou jQuery Mobile&lt;/li&gt;
+&lt;li&gt;pour les sessions et le cache, éviter l'utilisation de cookies (transfert de data) =&amp;gt;  Penser au Session storage, Local storage, DB storage&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Au niveau du contenu&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;offrir la possibilité de publier une version résumée des articles (DomainAccess)&lt;/li&gt;
+&lt;li&gt;offrir la possibilité de publier une partie d'une page composite (variantes de Panel, Context, ...)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;=&amp;gt; On a une version du site réellement adaptée au mobile avec :&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Un contenu allégé, adapté au mode de lecture du mobinaute&lt;/li&gt;
+&lt;li&gt;Peu de HTML&lt;/li&gt;
+&lt;li&gt;Pas de JS&lt;/li&gt;
+&lt;li&gt;Beaucoup de cache navigateur&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;La gestion des 2 URLS nécessite:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Plan de redirection : il doit être implémenter au plus tôt dans l'architecture  (load-balancer -&amp;gt; proxy-cache -&amp;gt; apache -&amp;gt; Drupal si pas possible de faire autrement)&lt;/li&gt;
+&lt;li&gt;Détection de browser : Device detection =&amp;gt; WURFL (plus OpenSource) vs. Browser detection =&amp;gt; BrowserCap&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Attention à bien mettre en cache la redirection dans les headers HTTP pour ne pas la recalculer à chaque fois !&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Exemple d'implémentation complète par Adyax : societegenerale.com&lt;/p&gt;
+&lt;p&gt;Les slides : &lt;a class="reference external" href="http://www.drupagora.com/sites/default/files/slide/Drupal_et_Mobilite.pdf"&gt;http://www.drupagora.com/sites/default/files/slide/Drupal_et_Mobilite.pdf&lt;/a&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="reussir-son-referencement-et-profiter-de-drupal"&gt;
+&lt;h2&gt;Réussir son référencement et profiter de Drupal&lt;/h2&gt;
+&lt;div class="section" id="quelques-trucs-google-auxquels-on-ne-pensent-pas-forcement"&gt;
+&lt;h3&gt;Quelques trucs Google auxquels on ne pensent pas forcément&lt;/h3&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;&amp;quot;Être en 1ère page de Google n'a plus vraiment de sens&amp;quot; : Penser à se référencer sur &amp;quot;tous&amp;quot; les sites google : maps, youtube, shooping, ... selon le type de site&lt;/li&gt;
+&lt;li&gt;Il est très largement préférable se positionner sur une multitude d'expressions qualifiées de 4/5/6 mots (longue traine), les expressions génériques sont inutiles&lt;/li&gt;
+&lt;li&gt;Quand on fait des tests de référencement, attention à la personnalisation des résultats qui peut être trompeuse (cookies, géoloc, sites visités régulièrement, ...)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class="section" id="evolutions-des-algorithmes-google-en-2010-11-12"&gt;
+&lt;h3&gt;Évolutions des algorithmes Google en 2010-11-12-...&lt;/h3&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Google Panda =&amp;gt; Les pages à forte valeur ajoutée ont beaucoup plus d'importance que les aggrégateurs (news, comparateurs de prix, ...)&lt;/li&gt;
+&lt;li&gt;Vers plus de &amp;quot;social ranking&amp;quot; =&amp;gt; Facebook like, Google +1&lt;/li&gt;
+&lt;li&gt;Arrivée du &amp;quot;person ranking&amp;quot; =&amp;gt; La popularité de l'auteur de la page (Twitter, Facebook, Blog) va avoir une importance dans le positionnement de la page dans les prochains mois&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class="section" id="la-regle-des-80-20-pour-le-referencement-d-un-site-drupal"&gt;
+&lt;h3&gt;La règle des 80/20 pour le référencement d'un site Drupal&lt;/h3&gt;
+&lt;p&gt;Avec Drupal, 80% de l'optimisation du référencement d'un site =  5 optimisations:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ol class="arabic simple"&gt;
+&lt;li&gt;Un bon title avec les bons mots-clés (en restant naturel : accents, majuscules, ...)&lt;/li&gt;
+&lt;li&gt;Une bonne URL (sans paramètre, avec les bons mots-clés)&lt;/li&gt;
+&lt;li&gt;Une bonne meta description pour attirer le clic (accroche du type &amp;quot;Livraison gratuite&amp;quot;)&lt;/li&gt;
+&lt;li&gt;Une bonne structure de site&lt;/li&gt;
+&lt;li&gt;Une bonne structure sémantique HTML (h*, ul/li)&lt;/li&gt;
+&lt;li&gt;(bonus) Avoir un title + H1 + URL indépendants les uns des autres !&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Les autres 20% :&lt;/p&gt;
+&lt;blockquote&gt;
+Fil d'Ariane, taux de rebond (!!!), balises alternatives des images/vidéos, micro-formats, ...&lt;/blockquote&gt;
+&lt;/div&gt;
+&lt;div class="section" id="quelques-modules-drupal"&gt;
+&lt;h3&gt;Quelques modules Drupal&lt;/h3&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;URLs : PathAuto, PathAlias, PathRedirect, GlobalRedirect, Token&lt;/li&gt;
+&lt;li&gt;Title : PageTitle, Taxonomy/Title&lt;/li&gt;
+&lt;li&gt;Metas : Nodewords&lt;/li&gt;
+&lt;li&gt;Sitemap : SitemapXML&lt;/li&gt;
+&lt;li&gt;Linking interne : CKELink&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les slides : &lt;a class="reference external" href="http://www.drupagora.com/sites/default/files/slide/presentation-Sebastien-Monnier-Woptimo-drupagora%20-%20V2.pptx"&gt;http://www.drupagora.com/sites/default/files/slide/presentation-Sebastien-Monnier-Woptimo-drupagora%20-%20V2.pptx&lt;/a&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="gestion-unifiee-des-medias-chez-radio-france"&gt;
+&lt;h2&gt;Gestion unifiée des medias chez Radio France&lt;/h2&gt;
+&lt;p&gt;RadioFrance est confronté au problème classique de la gestion des medias (sous D6 pour le moment) sur plusieurs sites. Leurs contraintes sont les suivantes :&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Tout type de médias (photo, audio, video, flux externe, objets personnalisés)&lt;/li&gt;
+&lt;li&gt;Gestion de différents droits, licences, copyrights, expiration selon le media, la source, ...&lt;/li&gt;
+&lt;li&gt;Différents render de chaque media selon le context d'affichage (dans un wysiwyg ou non, sur device mobile, ...)&lt;/li&gt;
+&lt;li&gt;~ 1.000.000 de nodes&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;L'implémentation technique est basée sur le module &lt;a class="reference external" href="http://drupal.org/project/scald"&gt;Scald&lt;/a&gt;, initialement développé &amp;amp; utilisé par la radio publique de Chicago :&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;gère n'importe quel media&lt;/li&gt;
+&lt;li&gt;a son propre type de stockage unifiant (atoms) pour pallier à l'absence d'Entity sur D6&lt;/li&gt;
+&lt;li&gt;a sa propre gestion de cache&lt;/li&gt;
+&lt;li&gt;possède une gestion de &amp;quot;providers&amp;quot; pour pouvoir gérer des types de contenus media personnalisés !&lt;/li&gt;
+&lt;li&gt;D6 seulement, mais le portage D7 est prévu pour Q1 2012&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;La solution construite par RadioFrance consiste en une bibliothèque partagée qui liste tous les medias disponibles au contributeur (Scald + Views + Lightbox):&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;visible et accessible en permanence dans un bandeau droit vertical,&lt;/li&gt;
+&lt;li&gt;filtres ajax (titre, type de media, tags, licences, ...) + enregistrement de recherches personnalisées,&lt;/li&gt;
+&lt;li&gt;prévisualisation de n'importe quel media en lightbox&lt;/li&gt;
+&lt;li&gt;ajout d'un nouveau media lightbox (sans quitter le node en cours de création donc !)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;L'intégration d'un media dans un contenu se fait par un simple Drag &amp;amp; Drop :&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p class="first"&gt;soit directement dans un WYSIWYG, avec le rendu final automatique. Exemple :&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;pour une photo : affichage de l'image + légende + copyright,&lt;/li&gt;
+&lt;li&gt;pour un audio ou une video : affichage du player thémé.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p class="first"&gt;soit dans un fieldset du formulaire (stockage dans un field caché)&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Ergonomiquement pour le contributeur ... c'est très sympa !&lt;/p&gt;
+&lt;p&gt;Pour le passage à D7, RadioFrance hésite entre Scald et Media :&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Entity rend redondante la couche d'abstraction créée par Scald avec Atom&lt;/li&gt;
+&lt;li&gt;Pour le moment, l'interface et les fonctionnalités de Media sont plus basiques que Scald (integration Views inexistante ou très récente, gestion pauvre des licences/expiration, ...), mais il y a bien sûr la possibilité d'ajouter des plugins&lt;/li&gt;
+&lt;li&gt;Le développement de Media avance vite, et rattrape petit à petit Scald&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;=&amp;gt; Selon RadioFrance, impossible d'être influent sur l'orientation de Media face à Acquia, donc RadioFrance va choisir d'aider au portage de Scald sur D7 plutôt que de contribuer à Media ...&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;A tester aussi : le module &lt;a class="reference external" href="http://drupal.org/project/mediafront"&gt;MediaFront&lt;/a&gt; basé sur Media.&lt;/p&gt;
+&lt;/div&gt;
+</summary><category term="drupal"></category></entry><entry><title>My short drush cheat sheet</title><link href="http://fle.github.io/my-short-drush-cheat-sheet.html" rel="alternate"></link><updated>2011-01-31T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2011-01-31:my-short-drush-cheat-sheet.html</id><summary type="html">&lt;p&gt;Drush (DRUpal SHell) is a command-line which allows you to administer your Drupal site in console.&lt;/p&gt;
+&lt;p&gt;It can be very useful when you have broken your site and when you can't access to your administration interface.&lt;/p&gt;
+&lt;p&gt;Drush command format:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush &lt;span class="o"&gt;[&lt;/span&gt;options&lt;span class="o"&gt;]&lt;/span&gt; &amp;lt;&lt;span class="nb"&gt;command&lt;/span&gt;&amp;gt; &lt;span class="o"&gt;[&lt;/span&gt;argument&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Below, a few basic commands offered by drush :&lt;/p&gt;
+&lt;p&gt;List all commands and get help:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush
+&lt;span class="gp"&gt;$&lt;/span&gt; drush &lt;span class="nb"&gt;help&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Install Drupal ! (Very useful to deploy a dev instance quickly):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="go"&gt;-- Download latest Drupal ...&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; drush dl drupal
+&lt;span class="go"&gt;-- or select a version ...&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; drush dl drupal --select
+&lt;span class="go"&gt;-- and install it !&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; drush si --account-name&lt;span class="o"&gt;=&lt;/span&gt;&amp;lt;USER&amp;gt; --account-pass&lt;span class="o"&gt;=&lt;/span&gt;&amp;lt;PASS&amp;gt; --db-url&lt;span class="o"&gt;=&lt;/span&gt;mysql://&amp;lt;DB_USER&amp;gt;:&amp;lt;DB_PASS&amp;gt;@localhost/&amp;lt;DB_NAME&amp;gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Clear Drupal caches (used 87 times today):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush cc all
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Install one or more module(s):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush dl -y &amp;lt;MODULE&amp;gt; &lt;span class="o"&gt;[&lt;/span&gt;&amp;lt;MODULE2&amp;gt;, ...&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; drush en -y &amp;lt;MODULE&amp;gt; &lt;span class="o"&gt;[&lt;/span&gt;&amp;lt;MODULE2&amp;gt;, ...&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Disable and uninstall module(s):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush dis -y &amp;lt;MODULE&amp;gt; &lt;span class="o"&gt;[&lt;/span&gt;&amp;lt;MODULE2&amp;gt;, ...&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; drush pm-uninstall -y &amp;lt;MODULE&amp;gt; &lt;span class="o"&gt;[&lt;/span&gt;&amp;lt;MODULE2&amp;gt;, ...&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Export database (intelligently, i.e. without cache tables and other stuff):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush sql-dump --result-file&lt;span class="o"&gt;=&lt;/span&gt;&amp;lt;DUMP_FILE.sql&amp;gt; --gzip
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Launch Drupal cron:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush cron
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Update your Drupal site:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush up
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Of course, it's a very short list of basic drush commands, this post is just my drush newbie notes taken during &lt;a class="reference external" href="http://twitter.com/juliendubreuil"&gt;JulienD&lt;/a&gt; presentation at #DCNantes. There is many other commands with drush core, some modules can extend this list and you can implement your own drush commands.&lt;/p&gt;
+&lt;p&gt;With some configuration, you can administer two sites or more easily.&lt;/p&gt;
+</summary><category term="drush"></category></entry><entry><title>Generate a weblog with pelican</title><link href="http://fle.github.io/generate-a-weblog-with-pelican.html" rel="alternate"></link><updated>2011-01-16T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2011-01-16:generate-a-weblog-with-pelican.html</id><summary type="html">&lt;p&gt;I'm testing pelican, a static blog generator written in python. From simple rst or markdown files (your blog entries), pelican can produce a nice blog with just a cli-tool command. Sources can be managed with your favourite DVCS and final site is easily hosted on any web server.&lt;/p&gt;
+&lt;p&gt;It seems to be nice so I try this tool, discover at he same time reStructuredText and blog it on the fly!&lt;/p&gt;
+&lt;p&gt;1 - Start with install pelican from pypi:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; easy_install pelican
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Note : Pelican has &lt;a class="reference external" href="http://docs.notmyidea.org/alexis/pelican/getting_started.html#dependencies"&gt;some dependancies&lt;/a&gt; so it could be better to install it in virtualenv.&lt;/p&gt;
+&lt;p&gt;2 - Simply create a minimal filesystem:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="go"&gt;blog/sources       -- to store blog entry .rst files&lt;/span&gt;
+&lt;span class="go"&gt;blog/www           -- final web site directory&lt;/span&gt;
+&lt;span class="go"&gt;blog/settings.py   -- settings file&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;3 - Just edit settings.py to add general settings like title, author, URL and other stuff. Mine is very simple for now:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# -*- coding: utf-8 -*-&lt;/span&gt;
+&lt;span class="n"&gt;AUTHOR&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;u&amp;#39;Florent Lebreton (fle)&amp;#39;&lt;/span&gt;
+&lt;span class="n"&gt;SITENAME&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;u&amp;quot;/home/fle&amp;quot;&lt;/span&gt;
+&lt;span class="n"&gt;SITEURL&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;http://blog.fle.org&amp;#39;&lt;/span&gt;
+
+&lt;span class="n"&gt;PDF_GENERATOR&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;False&lt;/span&gt;
+
+&lt;span class="n"&gt;LINKS&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;planet django&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;http://planetdjango.org&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),)&lt;/span&gt;
+
+&lt;span class="n"&gt;SOCIAL&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;viadeo&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;http://www.viadeo.com/fr/profile/florent.lebreton&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;4 - Then, write my first blog entry in sources/01-test.rst:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gh"&gt;Hello world&lt;/span&gt;
+&lt;span class="gh"&gt;###########&lt;/span&gt;
+
+&lt;span class="nc"&gt;:date:&lt;/span&gt; &lt;span class="nf"&gt;2011-01-16&lt;/span&gt;
+&lt;span class="nc"&gt;:tags:&lt;/span&gt; &lt;span class="nf"&gt;test, pelican&lt;/span&gt;
+&lt;span class="nc"&gt;:category:&lt;/span&gt; &lt;span class="nf"&gt;python&lt;/span&gt;
+&lt;span class="nc"&gt;:author:&lt;/span&gt; &lt;span class="nf"&gt;Florent Lebreton (fle)&lt;/span&gt;
+
+Hello !
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;5 - Finally, just run the cli-tool like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="nb"&gt;cd &lt;/span&gt;blog
+&lt;span class="gp"&gt;$&lt;/span&gt; pelican -s settings.py -o www/ sources/
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Pelican manages syndication, PDF generation, theming and other cool stuff. Take a look at &lt;a class="reference external" href="http://alexis.notmyidea.org/pelican/"&gt;Pelican page&lt;/a&gt; for more information.&lt;/p&gt;
+</summary><category term="pelican"></category></entry></feed>

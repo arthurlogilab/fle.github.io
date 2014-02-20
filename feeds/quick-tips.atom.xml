@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Florent Lebreton</title><link href="http://fle.github.io/" rel="alternate"></link><link href="http://fle.github.io/feeds/quick-tips.atom.xml" rel="self"></link><id>http://fle.github.io/</id><updated>2014-02-04T00:00:00+01:00</updated><entry><title>GIT tip : A simple .gitconfig file</title><link href="http://fle.github.io/git-tip-a-simple-gitconfig-file.html" rel="alternate"></link><updated>2014-02-04T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2014-02-04:git-tip-a-simple-gitconfig-file.html</id><summary type="html">&lt;p&gt;As several friends have asked me this, here is my &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;~/.gitconfig&lt;/span&gt;&lt;/tt&gt; base file.&lt;/p&gt;
+&lt;p&gt;Nothing special, just a few aliases and some syntax highlighting :).&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="go"&gt;[user]&lt;/span&gt;
+&lt;span class="go"&gt;        name = Florent Lebreton&lt;/span&gt;
+&lt;span class="go"&gt;        email = florentlebreton@free.fr&lt;/span&gt;
+&lt;span class="go"&gt;[color]&lt;/span&gt;
+&lt;span class="go"&gt;        ui = auto&lt;/span&gt;
+
+&lt;span class="go"&gt;[color &amp;quot;branch&amp;quot;]&lt;/span&gt;
+&lt;span class="go"&gt;        current = yellow reverse&lt;/span&gt;
+&lt;span class="go"&gt;        local = yellow&lt;/span&gt;
+&lt;span class="go"&gt;        remote = green&lt;/span&gt;
+
+&lt;span class="go"&gt;[color &amp;quot;diff&amp;quot;]&lt;/span&gt;
+&lt;span class="go"&gt;        meta = yellow bold&lt;/span&gt;
+&lt;span class="go"&gt;        frag = magenta bold&lt;/span&gt;
+&lt;span class="go"&gt;        old = red bold&lt;/span&gt;
+&lt;span class="go"&gt;        new = green bold&lt;/span&gt;
+&lt;span class="go"&gt;        whitespace = red reverse&lt;/span&gt;
+
+&lt;span class="go"&gt;[color &amp;quot;status&amp;quot;]&lt;/span&gt;
+&lt;span class="go"&gt;        added = yellow&lt;/span&gt;
+&lt;span class="go"&gt;        changed = green&lt;/span&gt;
+&lt;span class="go"&gt;        untracked = cyan&lt;/span&gt;
+
+&lt;span class="go"&gt;[core]&lt;/span&gt;
+&lt;span class="go"&gt;        whitespace=fix,-indent-with-non-tab,trailing-space,cr-at-eol&lt;/span&gt;
+
+&lt;span class="go"&gt;[alias]&lt;/span&gt;
+&lt;span class="go"&gt;        st = status&lt;/span&gt;
+&lt;span class="go"&gt;        ci = commit&lt;/span&gt;
+&lt;span class="go"&gt;        br = branch&lt;/span&gt;
+&lt;span class="go"&gt;        co = checkout&lt;/span&gt;
+&lt;span class="go"&gt;        df = diff&lt;/span&gt;
+&lt;span class="go"&gt;        dc = diff --cached&lt;/span&gt;
+&lt;span class="go"&gt;        lg = log -p&lt;/span&gt;
+&lt;span class="go"&gt;        pr = pull --rebase&lt;/span&gt;
+&lt;span class="go"&gt;        gr = log --all --graph --decorate --oneline&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;&amp;amp;nbsp;&lt;/p&gt;
+&lt;p&gt;Simple and basic but I hope you'll have found something useful in it. If yes, you may want to know that I sometimes &lt;a class="reference external" href="http://twitter.com/__fle__"&gt;tweet&lt;/a&gt; and post &lt;a class="reference external" href="/tag/git.html"&gt;stuff about GIT&lt;/a&gt; !&lt;/p&gt;
+&lt;p&gt;Thanks &lt;a class="reference external" href="https://twitter.com/opidentica"&gt;opidentica&lt;/a&gt; for having noticed the error!&lt;/p&gt;
+</summary><category term="git"></category></entry><entry><title>GIT tip : Keep your branch clean with fixup and autosquash</title><link href="http://fle.github.io/git-tip-keep-your-branch-clean-with-fixup-and-autosquash.html" rel="alternate"></link><updated>2013-12-04T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2013-12-04:git-tip-keep-your-branch-clean-with-fixup-and-autosquash.html</id><summary type="html">&lt;p&gt;Who is not tired of committing a &amp;quot;Remove pdb&amp;quot; or a &amp;quot;Fix a typo&amp;quot; few minutes or hours after committing a clean feature ? A few time ago, I discovered two useful options in GIT that work together : &lt;tt class="docutils literal"&gt;git commit &lt;span class="pre"&gt;--fixup&lt;/span&gt;&lt;/tt&gt; and &lt;tt class="docutils literal"&gt;git rebase &lt;span class="pre"&gt;--autosquash&lt;/span&gt;&lt;/tt&gt;. With these, you can easily merge little fixes with the original feature and keep your branch clean.&lt;/p&gt;
+&lt;p&gt;Preferably, you won't use it in a stable or master branch, because rebase rewrites history and can create a big mess, mainly if project counts several developers. It rather can be convenient to clean a development branch before merging it in master.&lt;/p&gt;
+&lt;div class="section" id="fixup-autosquash"&gt;
+&lt;h2&gt;--fixup &amp;amp; --autosquash&lt;/h2&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;&lt;tt class="docutils literal"&gt;git commit &lt;span class="pre"&gt;--fixup&lt;/span&gt; &amp;lt;commit&amp;gt;&lt;/tt&gt; automatically marks your commit as a fix of a previous commit&lt;/li&gt;
+&lt;li&gt;&lt;tt class="docutils literal"&gt;git rebase &lt;span class="pre"&gt;-i&lt;/span&gt; &lt;span class="pre"&gt;--autosquash&lt;/span&gt;&lt;/tt&gt; automatically organize merging of these fixup commits and associated normal commits&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class="section" id="example"&gt;
+&lt;h2&gt;Example&lt;/h2&gt;
+&lt;p&gt;Take a git repos with a branch &lt;cite&gt;dev&lt;/cite&gt;. You intend to commit features A and B:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git add featureA
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git commit -m &lt;span class="s2"&gt;&amp;quot;Feature A is done&amp;quot;&lt;/span&gt;
+&lt;span class="go"&gt;[dev fb2f677] Feature A is done&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git add featureB
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git commit -m &lt;span class="s2"&gt;&amp;quot;Feature B is done&amp;quot;&lt;/span&gt;
+&lt;span class="go"&gt;[dev 733e2ff] Feature B is done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Your work is in progress and you find minor mistakes in Feature A : it's time to use &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;--fixup&lt;/span&gt;&lt;/tt&gt; option !&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git add featureA                &lt;span class="c"&gt;# you&amp;#39;ve removed a pdb : shameful commit&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git commit --fixup fb2f677
+&lt;span class="go"&gt;[dev c5069d5] fixup! Feature A is done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Here, you see that GIT automatically retrieved featureA commit message prefixed by fixup!.&lt;/p&gt;
+&lt;p&gt;All work is done, let's see the log:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git log --oneline
+&lt;span class="go"&gt;c5069d5 fixup! Feature A is done&lt;/span&gt;
+&lt;span class="go"&gt;733e2ff Feature B is done&lt;/span&gt;
+&lt;span class="go"&gt;fb2f677 Feature A is done&lt;/span&gt;
+&lt;span class="go"&gt;ac5db87 Previous commit&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now, you want to clean your branch before merging it : it's time to use &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;--autosquash&lt;/span&gt;&lt;/tt&gt; option !&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git rebase -i --autosquash ac5db87
+&lt;span class="go"&gt;pick fb2f677 Feature A is done&lt;/span&gt;
+&lt;span class="go"&gt;fixup c5069d5 fixup! Feature A is done&lt;/span&gt;
+&lt;span class="go"&gt;fixup c9e138f fixup! Feature A is done&lt;/span&gt;
+&lt;span class="go"&gt;pick 733e2ff Feature B is done&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This command has opened your editor with lines above. Just save &amp;amp; quit and ... :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;dev&lt;span class="o"&gt;)&lt;/span&gt; git log --oneline
+&lt;span class="go"&gt;ff4de2a Feature B is done&lt;/span&gt;
+&lt;span class="go"&gt;5478cee Feature A is done&lt;/span&gt;
+&lt;span class="go"&gt;ac5db87 Previous commit&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Your shameful commit has been merged properly with the original feature. It's just a shorcut for something you could do otherwise but I find it very convenient :).&lt;/p&gt;
+&lt;p&gt;That's all folks !&lt;/p&gt;
+&lt;p&gt;EDIT : &lt;tt class="docutils literal"&gt;git rebase i &lt;span class="pre"&gt;&amp;lt;after-this-commit&amp;gt;&lt;/span&gt;&lt;/tt&gt; must be launched with as argument &lt;cite&gt;the last commit you want to retain as-is&lt;/cite&gt;, not the first one you want to change.&lt;/p&gt;
+&lt;p&gt;Thanks &lt;a class="reference external" href="http://twitter.com/regilero"&gt;regilero&lt;/a&gt; &amp;amp; &lt;a class="reference external" href="http://twitter.com/SebCorbin"&gt;SebCorbin&lt;/a&gt; for reviewing!&lt;/p&gt;
+&lt;/div&gt;
+</summary><category term="git"></category></entry></feed>

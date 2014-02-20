@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="">	
+<head>
+	<meta charset="utf-8"/>
+	<title>My short drush cheat sheet - Florent Lebreton</title>	
+	<meta name="author" content="Florent Lebreton (fle)">
+	
+
+	<meta name="description" content="Drush (DRUpal SHell) is a command-line which allows you to administer your Drupal site in console. It can be very useful when you have broken your site and when you can't access to your administration interface.">
+
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:creator" content="@__fle__">
+	<meta name="twitter:title" content="My short drush cheat sheet">
+	<meta name="twitter:description" content="Drush (DRUpal SHell) is a command-line which allows you to administer your Drupal site in console. It can be very useful when you have broken your site and when you can't access to your administration interface.">
+
+	<link rel="top" href="#" /><link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,300italic,400italic,600italic|Source+Code+Pro' rel='stylesheet' type='text/css'></link>
+	
+	<link rel="stylesheet" href="http://fle.github.io/theme/css/main.css" type="text/css" />
+		
+	  <script type="text/javascript" src="http://fle.github.io/theme/js/custom_scripts.js"></script>
+
+
+    <link href="http://fle.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Florent Lebreton Atom Feed" />
+</head>
+	
+<body>
+
+    <div class="container">
+	  
+	  <header role="banner">
+	    <div class="feeds">
+	        <a href="http://fle.github.io/feeds/all.atom.xml" rel="alternate"><img src="/theme/images/icons/feed-32px.png" alt="atom feed"/></a>
+	    </div>
+	      <nav class="pages">
+			  <a href="http://fle.github.io/pages/about-me.html">About me</a>
+	      </nav>
+		<a href="http://fle.github.io" class="title">Florent Lebreton</a>
+      </header>
+	
+	  <div class="wrapper">
+
+		  <div role="main" class="content">
+	<article class="full">
+			
+		<h1>My short drush cheat sheet</h1>
+		
+<div class="metadata">
+  <time datetime="2011-01-31T00:00:00" pubdate>Mon 31 January 2011</time>
+    <address class="vcard author">
+      by <a class="url fn" href="http://fle.github.io/author/florent-lebreton-fle.html">Florent Lebreton (fle)</a>
+    </address>
+  in <a href="http://fle.github.io/category/development.html">development</a>
+<p class="tags">tagged <a href="http://fle.github.io/tag/drush.html">drush</a></p></div>		
+		<p>Drush (DRUpal SHell) is a command-line which allows you to administer your Drupal site in console.</p>
+<p>It can be very useful when you have broken your site and when you can't access to your administration interface.</p>
+<p>Drush command format:</p>
+<div class="highlight"><pre><span class="gp">$</span> drush <span class="o">[</span>options<span class="o">]</span> &lt;<span class="nb">command</span>&gt; <span class="o">[</span>argument<span class="o">]</span>
+</pre></div>
+<p>Below, a few basic commands offered by drush :</p>
+<p>List all commands and get help:</p>
+<div class="highlight"><pre><span class="gp">$</span> drush
+<span class="gp">$</span> drush <span class="nb">help</span>
+</pre></div>
+<p>Install Drupal ! (Very useful to deploy a dev instance quickly):</p>
+<div class="highlight"><pre><span class="go">-- Download latest Drupal ...</span>
+<span class="gp">$</span> drush dl drupal
+<span class="go">-- or select a version ...</span>
+<span class="gp">$</span> drush dl drupal --select
+<span class="go">-- and install it !</span>
+<span class="gp">$</span> drush si --account-name<span class="o">=</span>&lt;USER&gt; --account-pass<span class="o">=</span>&lt;PASS&gt; --db-url<span class="o">=</span>mysql://&lt;DB_USER&gt;:&lt;DB_PASS&gt;@localhost/&lt;DB_NAME&gt;
+</pre></div>
+<p>Clear Drupal caches (used 87 times today):</p>
+<div class="highlight"><pre><span class="gp">$</span> drush cc all
+</pre></div>
+<p>Install one or more module(s):</p>
+<div class="highlight"><pre><span class="gp">$</span> drush dl -y &lt;MODULE&gt; <span class="o">[</span>&lt;MODULE2&gt;, ...<span class="o">]</span>
+<span class="gp">$</span> drush en -y &lt;MODULE&gt; <span class="o">[</span>&lt;MODULE2&gt;, ...<span class="o">]</span>
+</pre></div>
+<p>Disable and uninstall module(s):</p>
+<div class="highlight"><pre><span class="gp">$</span> drush dis -y &lt;MODULE&gt; <span class="o">[</span>&lt;MODULE2&gt;, ...<span class="o">]</span>
+<span class="gp">$</span> drush pm-uninstall -y &lt;MODULE&gt; <span class="o">[</span>&lt;MODULE2&gt;, ...<span class="o">]</span>
+</pre></div>
+<p>Export database (intelligently, i.e. without cache tables and other stuff):</p>
+<div class="highlight"><pre><span class="gp">$</span> drush sql-dump --result-file<span class="o">=</span>&lt;DUMP_FILE.sql&gt; --gzip
+</pre></div>
+<p>Launch Drupal cron:</p>
+<div class="highlight"><pre><span class="gp">$</span> drush cron
+</pre></div>
+<p>Update your Drupal site:</p>
+<div class="highlight"><pre><span class="gp">$</span> drush up
+</pre></div>
+<p>Of course, it's a very short list of basic drush commands, this post is just my drush newbie notes taken during <a class="reference external" href="http://twitter.com/juliendubreuil">JulienD</a> presentation at #DCNantes. There is many other commands with drush core, some modules can extend this list and you can implement your own drush commands.</p>
+<p>With some configuration, you can administer two sites or more easily.</p>
+	
+
+	</article>
+
+    <p>
+	<a href="https://twitter.com/share" class="twitter-share-button" data-via="" data-lang="en" data-size="large" data-related="">Tweet</a>
+	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+	</p>
+
+	<div class="comments">
+	<h2>Comments !</h2>
+	    <div id="disqus_thread"></div>
+	    <script type="text/javascript">
+	       var disqus_identifier = "my-short-drush-cheat-sheet.html";
+	       (function() {
+	       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	       dsq.src = 'http://flegithubio.disqus.com/embed.js';
+	       (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	      })();
+	    </script>
+	</div>
+
+		  </div>	
+		  
+		  <div class="sidebar">
+		    <div class="sidebar-container" id="sidebar-container-fixed">
+
+	            <aside>
+	              <h2>About</h2>
+			      <p>
+                    Software engineer and trainer at Makina Corpus Nantes. Python, Django and GIT addict. Dance, sail, take photos.
+			      </p>
+			    </aside>
+
+  	          <nav>
+	            <h2>Categories</h2>
+	            <ul>
+	                <li class="active"><a href="http://fle.github.io/category/development.html">development</a></li>
+	                <li ><a href="http://fle.github.io/category/geek-stuff.html">geek stuff</a></li>
+	                <li ><a href="http://fle.github.io/category/quick-tips.html">quick tips</a></li>
+	            </ul>
+	          </nav>
+
+	            <aside>
+	            <h2>Social</h2>
+			      <ul class="social">
+				    <li><a href="http://www.linkedin.com/in/florentlebreton">linkedin</a><i></i></li>
+				    <li><a href="https://twitter.com/__fle__">twitter</a><i></i></li>
+				    <li><a href="https://plus.google.com/114836609462836450047">google</a><i></i></li>
+				    <li><a href="https://github.com/fle">github</a><i></i></li>
+			      </ul>
+			    </aside>
+
+	            <aside>
+	              <h2>Blogroll</h2>
+	              <ul>
+	                  <li><a href="http://makina-corpus.com/blog">Makina Corpus</a></li>
+	                  <li><a href="http://planetdjango.org">Planet Django</a></li>
+	                  <li><a href="http://regilero.github.io">Regliero's blog</a></li>
+	              </ul>
+	            </aside>
+	        </div>
+		  </div>
+
+	  </div>
+
+      <footer>
+		<p role="contentinfo">
+		  Florent Lebreton (fle) - Proudly powered by <a href="http://alexis.notmyidea.org/pelican/">pelican</a>. Theme <a href="https://github.com/fle/pelican-simplegrey">pelican-simplegrey</a>.
+    	</p>
+
+	  </footer>	
+
+	</div>
+	
+	  <script>
+		var _gaq=[['_setAccount','UA-18281356-9'],['_trackPageview']];
+		(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+		g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+		s.parentNode.insertBefore(g,s)}(document,'script'));
+	  </script>
+
+</body>
+</html>

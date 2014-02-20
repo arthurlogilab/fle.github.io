@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Florent Lebreton</title><link href="http://fle.github.io/" rel="alternate"></link><link href="http://fle.github.io/feeds/development.atom.xml" rel="self"></link><id>http://fle.github.io/</id><updated>2014-02-12T00:00:00+01:00</updated><entry><title>An efficient GIT workflow for mid/long term projects</title><link href="http://fle.github.io/an-efficient-git-workflow-for-midlong-term-projects.html" rel="alternate"></link><updated>2014-02-12T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2014-02-12:an-efficient-git-workflow-for-midlong-term-projects.html</id><summary type="html">&lt;p&gt;Our &lt;a class="reference external" href="http://makina-corpus.com/realisations/application-de-gmao"&gt;full-web CAMM project&lt;/a&gt;
+at &lt;a class="reference external" href="http://makina-corpus.com"&gt;Makina Corpus&lt;/a&gt; has been going on for nearly two
+years and is running in production for over 18 months. I think it's my first project
+without any headache about our codebase and VCS management. So, I'll present our
+GIT workflow which has proven to be very effective for now.&lt;/p&gt;
+&lt;div class="section" id="context"&gt;
+&lt;h2&gt;Context&lt;/h2&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Several developers&lt;/li&gt;
+&lt;li&gt;Several staging/pre-production servers, several (non-synchronous) production servers&lt;/li&gt;
+&lt;li&gt;Monthly releases (more or less) with delivery on staging, then on production servers&lt;/li&gt;
+&lt;li&gt;On servers, basecode is directly pulled from the GIT repository with fabric&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class="section" id="rules"&gt;
+&lt;h2&gt;Rules&lt;/h2&gt;
+&lt;p&gt;To handle this, we have set some simple rules:&lt;/p&gt;
+&lt;div class="box center only-list"&gt;&lt;ol class="arabic simple"&gt;
+&lt;li&gt;One (and only one) maintainer, who manage GIT repository and releases&lt;/li&gt;
+&lt;li&gt;Never commit directly on &lt;tt class="docutils literal"&gt;master&lt;/tt&gt;&lt;/li&gt;
+&lt;li&gt;Never rebase &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; on any branch&lt;/li&gt;
+&lt;li&gt;Do not get out of planned workflow&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;&lt;/div&gt;
+&lt;div class="section" id="workflow"&gt;
+&lt;h2&gt;Workflow&lt;/h2&gt;
+&lt;div class="section" id="master-branch"&gt;
+&lt;h3&gt;Master branch&lt;/h3&gt;
+&lt;p&gt;Our branch &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; is the common trunk and simply contains all the codebase of
+the next release. Since we don't work directly on it, it evolves mainly with merges.&lt;/p&gt;
+&lt;img alt="Workflow GIT 1" src="/images/010-gw1.png" /&gt;
+&lt;/div&gt;
+&lt;div class="section" id="development-branches"&gt;
+&lt;h3&gt;Development branches&lt;/h3&gt;
+&lt;p&gt;When a developer starts a new feature or a bugfix, he creates a new branch from
+&lt;tt class="docutils literal"&gt;master&lt;/tt&gt; &lt;tt class="docutils literal"&gt;HEAD&lt;/tt&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git checkout -b featureA
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;featureA&lt;span class="o"&gt;)&lt;/span&gt; git add -m &lt;span class="s2"&gt;&amp;quot;featureA part 1&amp;quot;&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;featureA&lt;span class="o"&gt;)&lt;/span&gt; git add -m &lt;span class="s2"&gt;&amp;quot;featureA part 2&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;img alt="Workflow GIT 2" src="/images/010-gw2.png" /&gt;
+&lt;p&gt;He follows branch &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; evolution and regularly ensures his code still works,
+by rebasing his branch &lt;tt class="docutils literal"&gt;featureA&lt;/tt&gt; on branch &lt;tt class="docutils literal"&gt;master&lt;/tt&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;featureA&lt;span class="o"&gt;)&lt;/span&gt; git rebase master
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;When his developments are done (commits &lt;em&gt;fa1&lt;/em&gt; / &lt;em&gt;fa2&lt;/em&gt; in schema below), he does a last rebase. Thanks to this:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;he ensures that the maintainer will be able to merge easily (maintainer should not need to read code deeply and search why there are conflicts)&lt;/li&gt;
+&lt;li&gt;if tests pass on development branch after rebase, they should pass on &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; after merge, so &lt;strong&gt;we ensure that branch ``master`` is always working well&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Possibly, it will be the good time to
+&lt;a class="reference external" href="http://fle.github.io/git-tip-keep-your-branch-clean-with-fixup-and-autosquash.html"&gt;clean the development branch&lt;/a&gt;
+to let it neat just when it is finished.&lt;/p&gt;
+&lt;img alt="Workflow GIT 3" src="/images/010-gw3.png" /&gt;
+&lt;p&gt;The maintainer can now merge this branch in &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; peacefully, without big
+conflict troubles. As the maintainer, I like to use &lt;tt class="docutils literal"&gt;&lt;span class="pre"&gt;no-ff&lt;/span&gt;&lt;/tt&gt; option to force a
+&lt;em&gt;merge commit&lt;/em&gt;, so &lt;strong&gt;history can stay really readable&lt;/strong&gt; (we easily see where the
+branch has started and where it has been merged).&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git merge --no-ff featureA
+&lt;/pre&gt;&lt;/div&gt;
+&lt;img alt="Workflow GIT 4" src="/images/010-gw4.png" /&gt;
+&lt;p&gt;Now that the branch has been merged, the developer should remove his development
+branch.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git branch -d featureA
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git push origin :featureA
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="stable-branches"&gt;
+&lt;h3&gt;Stable branches&lt;/h3&gt;
+&lt;p&gt;When we prepare a release, we update CHANGELOG (with our workflow, a
+&lt;tt class="docutils literal"&gt;git log &lt;span class="pre"&gt;--oneline&lt;/span&gt;&lt;/tt&gt; should be quite clear to do that) and tag the branch
+&lt;tt class="docutils literal"&gt;master&lt;/tt&gt; (optional), then we start a stable branch.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git tag stable1.0
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git checkout -b stable1.0
+&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;stable1.0&lt;span class="o"&gt;)&lt;/span&gt; git push origin stable1.0
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This branch is deployed on different servers.&lt;/p&gt;
+&lt;p&gt;While development goes on, we possibly have to do some hotfixes (for example: commit
+&lt;em&gt;hf1&lt;/em&gt; in schema below), that must be sent in production quickly.
+These hotfixes are done directly on concerned stable branch.&lt;/p&gt;
+&lt;img alt="Workflow GIT 5" src="/images/010-gw5.png" /&gt;
+&lt;p&gt;Regularly, the maintainer merges stable branch in &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; to bring back these
+commits. This action is particularly important before the next release.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; git merge --no-ff stable1.0
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;We found this method really useful because:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;each stable branch has its own life and doesn't take care of branch &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; evolution, so &lt;strong&gt;we can hotfix stable branche freely and without stress&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;we ensure that no hotfix commit has been lost before next release (avoid regressions)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+&lt;div class="section" id="a-complete-history-example"&gt;
+&lt;h3&gt;A complete history example&lt;/h3&gt;
+&lt;img alt="Workflow GIT 6" src="/images/010-gw6.png" /&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="conclusion"&gt;
+&lt;h2&gt;Conclusion&lt;/h2&gt;
+&lt;p&gt;Of course, there are several GIT workflows which can be very efficient, but we found
+many advantages in working with this method, and no real issue:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Branch &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; is always clean and working well&lt;/li&gt;
+&lt;li&gt;Developers don't care about GIT whole workflow&lt;/li&gt;
+&lt;li&gt;We can fix stable branch without asking ourselves what happened on &lt;tt class="docutils literal"&gt;master&lt;/tt&gt; since last release&lt;/li&gt;
+&lt;li&gt;We ensure that each stable release contains new features and possible fixes&lt;/li&gt;
+&lt;li&gt;Always working with branches and using``-no-ff``option make history really clear !&lt;/li&gt;
+&lt;li&gt;This workflow is scalable (number of developers or branches doesn't really matter)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If you liked this article, stay tuned ! I sometimes &lt;a class="reference external" href="http://twitter.com/__fle__"&gt;tweet&lt;/a&gt; and post &lt;a class="reference external" href="/tag/git.html"&gt;GIT articles&lt;/a&gt; !&lt;/p&gt;
+&lt;p&gt;[FR] Ce billet en français sur le blog de Makina Corpus : &lt;a class="reference external" href="http://makina-corpus.com/blog/metier/un-workflow-git-efficace-pour-les-projets-a-moyen-long-terme"&gt;Un workflow GIT efficace pour les projets à moyen/long terme&lt;/a&gt; !&lt;/p&gt;
+&lt;style type="text/css"&gt;
+    article img {
+        display: block;
+        margin: 0 auto;
+    }
+&lt;/style&gt;&lt;/div&gt;
+</summary><category term="git"></category></entry><entry><title>Combine LDAP and classical authentication in django</title><link href="http://fle.github.io/combine-ldap-and-classical-authentication-in-django.html" rel="alternate"></link><updated>2013-12-20T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2013-12-20:combine-ldap-and-classical-authentication-in-django.html</id><summary type="html">&lt;p&gt;Still in our CAMM project &lt;a class="reference external" href="http://makina-corpus.com/realisations/application-de-gmao"&gt;JOB&lt;/a&gt; at &lt;a class="reference external" href="http://makina-corpus.com"&gt;Makina Corpus&lt;/a&gt;, we needed to provide an authentication system through a LDAP server. The module &lt;a class="reference external" href="https://pypi.python.org/pypi/django-auth-ldap"&gt;django-auth-ldap&lt;/a&gt; does most of work itself but we decided to combine this LDAP authentication with the classical django authentication for two reasons:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;keep possibility to create users only in django without having them in the LDAP directory (mainly for &lt;cite&gt;superusers&lt;/cite&gt;);&lt;/li&gt;
+&lt;li&gt;be able to fallback on django authentication for all users in case of a LDAP server failure.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;So to handle this, we have to:&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;differentiate LDAP directory users from django database users;&lt;/li&gt;
+&lt;li&gt;store password of LDAP users in django to be able to switch on classical authentication;&lt;/li&gt;
+&lt;li&gt;implement two custom authentication backends.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="section" id="user-model"&gt;
+&lt;h2&gt;User model&lt;/h2&gt;
+&lt;p&gt;We just implement a custom model user with a boolean &lt;tt class="docutils literal"&gt;from_ldap&lt;/tt&gt; to diffentiate LDAP users from classical django users.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;MyUser&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;AbstractUser&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;from_ldap&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;models&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;BooleanField&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+        &lt;span class="n"&gt;_&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;LDAP user&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+        &lt;span class="n"&gt;editable&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="n"&gt;default&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="ldap-authentication-backend"&gt;
+&lt;h2&gt;LDAP authentication backend&lt;/h2&gt;
+&lt;p&gt;This LDAP backend has two goals :&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Save user password in django database, thus he'll be able to log in django if LDAP authentication backend is disabled;&lt;/li&gt;
+&lt;li&gt;Force &lt;tt class="docutils literal"&gt;from_ldap&lt;/tt&gt; field to &lt;tt class="docutils literal"&gt;True&lt;/tt&gt; when a user is created by this way.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django_auth_ldap.backend&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;LDAPBackend&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.contrib.auth&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;get_user_model&lt;/span&gt;
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;MyLDAPBackend&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;LDAPBackend&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; A custom LDAP authentication backend &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;authenticate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Overrides LDAPBackend.authenticate to save user password in django &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+        &lt;span class="n"&gt;user&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;LDAPBackend&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;authenticate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="c"&gt;# If user has successfully logged, save his password in django database&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;set_password&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;save&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;user&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;get_or_create_user&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;ldap_user&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Overrides LDAPBackend.get_or_create_user to force from_ldap to True &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;kwargs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;username&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+            &lt;span class="s"&gt;&amp;#39;defaults&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;from_ldap&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="n"&gt;user_model&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;get_user_model&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;user_model&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_or_create&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;**&lt;/span&gt;&lt;span class="n"&gt;kwargs&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="classical-authentication-backend"&gt;
+&lt;h2&gt;Classical authentication backend&lt;/h2&gt;
+&lt;p&gt;We override &lt;tt class="docutils literal"&gt;django.contrib.auth.backends.ModelBackend&lt;/tt&gt; to ensure LDAP users can't logged in with this one if &lt;tt class="docutils literal"&gt;MyLDAPBackend&lt;/tt&gt; is available.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.contrib.auth&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;get_backends&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;get_user_model&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.contrib.auth.backends&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;ModelBackend&lt;/span&gt;
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;MyAuthBackend&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ModelBackend&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; A custom authentication backend overriding django ModelBackend &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+    &lt;span class="nd"&gt;@staticmethod&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_is_ldap_backend_activated&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Returns True if MyLDAPBackend is activated &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;MyLDAPBackend&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;b&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;__class__&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;b&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;get_backends&lt;/span&gt;&lt;span class="p"&gt;()]&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;authenticate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Overrides ModelBackend to refuse LDAP users if MyLDAPBackend is activated &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_is_ldap_backend_activated&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+            &lt;span class="n"&gt;user_model&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;get_user_model&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+            &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;user_model&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;from_ldap&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="bp"&gt;False&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;except&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
+
+        &lt;span class="n"&gt;user&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ModelBackend&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;authenticate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;user&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="django-settings-and-fallback-solution"&gt;
+&lt;h2&gt;Django settings and fallback solution&lt;/h2&gt;
+&lt;p&gt;Normally, we have our two backends activated :&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;LDAP users can only connect through &lt;tt class="docutils literal"&gt;MyLDAPBackend&lt;/tt&gt;;&lt;/li&gt;
+&lt;li&gt;Django users can connect through &lt;tt class="docutils literal"&gt;MyAuthBackend&lt;/tt&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;AUTHENTICATION_BACKENDS&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;accounts.backends.MyLDAPBackend&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;accounts.backends.MyAuthBackend&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;In case of a LDAP directory failure, we just have to disable &lt;tt class="docutils literal"&gt;MyLDAPBackend&lt;/tt&gt; and everybody can connect with &lt;tt class="docutils literal"&gt;MyAuthBackend&lt;/tt&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;AUTHENTICATION_BACKENDS&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;
+    &lt;span class="c"&gt;#&amp;#39;accounts.backends.MyLDAPBackend&amp;#39;,&lt;/span&gt;
+    &lt;span class="s"&gt;&amp;#39;accounts.backends.MyAuthBackend&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Thanks &lt;a class="reference external" href="http://twitter.com/leplatrem"&gt;leplatrem&lt;/a&gt; for review!&lt;/p&gt;
+&lt;p&gt;[FR] &lt;a class="reference external" href="http://makina-corpus.com/blog/metier/combiner-une-authentification-ldap-et-lauthentification-classique-django"&gt;Ce billet en français&lt;/a&gt; sur le blog de Makina Corpus !&lt;/p&gt;
+&lt;/div&gt;
+</summary><category term="django"></category><category term="ldap"></category></entry><entry><title>Capturez une signature manuscrite avec django-jsignature</title><link href="http://fle.github.io/capturez-une-signature-manuscrite-avec-django-jsignature.html" rel="alternate"></link><updated>2013-11-27T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2013-11-27:capturez-une-signature-manuscrite-avec-django-jsignature.html</id><summary type="html">&lt;p&gt;Aujourd'hui, tous les documents (ou presque) générés par l'activité d'une entreprise sont créés informatiquement.
+Dans certains cas, l'impression d'un document est nécessaire uniquement pour apposer une signature (de l'envoyeur, du destinataire, ou autre).&lt;/p&gt;
+&lt;p&gt;Dans le cadre d'un projet de &lt;a class="reference external" href="http://makina-corpus.com/realisations/application-de-gmao"&gt;GMAO full web&lt;/a&gt; chez &lt;a class="reference external" href="http://makina-corpus.com"&gt;Makina&lt;/a&gt;, nous avons mis en place, pour les techniciens itinérants, un formulaire de saisie de rapport signé sur tablette tactile.&lt;/p&gt;
+&lt;p&gt;Ce process, réalisé sur place et immédiatement après l'intervention, permet un gain de temps important en évitant les doubles saisies, les impressions et les échanges mails et courriers.&lt;/p&gt;
+&lt;p&gt;Bien que la signature &amp;quot;électronique-manuscrite&amp;quot; n'est pas une preuve totalement valable aux yeux de la loi, pouvoir apposer une signature via une tablette tactile peut être vraiment utile et éviter des impressions et des échanges inutiles :).&lt;/p&gt;
+&lt;p&gt;La fonctionnalité de signature a été réalisée avec jSignature, wrappée dans une app django.&lt;/p&gt;
+&lt;div class="section" id="jsignature-et-django-jsignature"&gt;
+&lt;h2&gt;jSignature et django-jsignature&lt;/h2&gt;
+&lt;p&gt;&lt;a class="reference external" href="https://github.com/brinley/jSignature/blob/master/README.md"&gt;jSignature&lt;/a&gt; est un plugin jQuery qui transforme un simple &amp;lt;div&amp;gt; en cadre prêt à recevoir une signature déssinée à la souris ou mieux, sur écran tactile. Quelques options de configuration sont disponibles et l'export de la signature est possible dans différents formats (image base/64, image base/30, json, ...).&lt;/p&gt;
+&lt;p&gt;Nous avons publié &lt;a class="reference external" href="https://github.com/fle/django-jsignature"&gt;django-jsignature&lt;/a&gt;, une petite app django permettant :&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;d'avoir facilement un champ &amp;quot;signature&amp;quot; dans un formulaire django (avec un field et un widget);&lt;/li&gt;
+&lt;li&gt;de faire le rendu de l'image en python (avec Pillow);&lt;/li&gt;
+&lt;li&gt;de stocker la signature (json) et la date de signature dans un modèle (champs fournis par un mixin);&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Le billet complet est sur le &lt;a class="reference external" href="http://makina-corpus.com/blog/metier/signez-vos-documents-sur-tablette-tactile-avec-django-jsignature"&gt;blog de Makina&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Le code est dispo sur &lt;a class="reference external" href="https://github.com/fle/django-jsignature.git"&gt;github&lt;/a&gt;.&lt;/p&gt;
+&lt;/div&gt;
+</summary><category term="django"></category><category term="jsignature"></category></entry><entry><title>Playing with LiveServerTestCase and Selenium</title><link href="http://fle.github.io/playing-with-liveservertestcase-and-selenium.html" rel="alternate"></link><updated>2012-11-25T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2012-11-25:playing-with-liveservertestcase-and-selenium.html</id><summary type="html">&lt;p&gt;At &amp;quot;Djangocon Tolosa&amp;quot;, Julien phalip spoke about a new feature in django 1.4, LiveServerTestCase. A LiveServerTestCase launches a true HTTP server and gives a way to make HTTP requests in test cases. It can be useful to test REST API over a full HTTP protocol stack. Or, associated with Selenium, it can be powerful to make functionnal tests, on a view using ajax for example.&lt;/p&gt;
+&lt;p&gt;Let's try it with a simple usecase :
+* a view which displays 10 first results of a dummy search in a &amp;lt;table&amp;gt;
+* a view which returns dynamically the 5 next results
+* a button wich launches an ajax request on this second view to fetch 5 more results and append it to the current list&lt;/p&gt;
+&lt;p&gt;Here is a simple code extract of each part :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c"&gt;# urls.py&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;
+&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;regex&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;r&amp;#39;^results_page$&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="n"&gt;view&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;results_page&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;results_page&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;regex&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;r&amp;#39;^get_more_lines$&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="n"&gt;view&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;get_more_lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;get_more_lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;
+
+&lt;span class="c"&gt;# views.py&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;results_page&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Renders a page with result list in a &amp;lt;table&amp;gt; &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;get_more_lines&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Returns dynamically 5 more lines to be displayed in table &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="x"&gt;# template.html&lt;/span&gt;
+&lt;span class="x"&gt;...&lt;/span&gt;
+&lt;span class="x"&gt;&amp;lt;table id=&amp;quot;results&amp;quot;&amp;gt;&lt;/span&gt;
+&lt;span class="x"&gt;  &lt;/span&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nv"&gt;r&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="nv"&gt;results&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+&lt;span class="x"&gt;    &amp;lt;tr&amp;gt;&amp;lt;td&amp;gt;&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;r&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;&amp;lt;/td&amp;gt;&amp;lt;/tr&amp;gt;&lt;/span&gt;
+&lt;span class="x"&gt;  &lt;/span&gt;&lt;span class="cp"&gt;{%&lt;/span&gt; &lt;span class="k"&gt;endfor&lt;/span&gt; &lt;span class="cp"&gt;%}&lt;/span&gt;&lt;span class="x"&gt;&lt;/span&gt;
+&lt;span class="x"&gt;&amp;lt;/table&amp;gt;&lt;/span&gt;
+&lt;span class="x"&gt;&amp;lt;a id=&amp;quot;more-lines&amp;quot; href=&amp;quot;#&amp;quot;&amp;gt;Get more lines&amp;lt;/a&amp;gt;&lt;/span&gt;
+&lt;span class="x"&gt;...&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c1"&gt;// scripts.js&lt;/span&gt;
+&lt;span class="p"&gt;...&lt;/span&gt;
+&lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;#more-lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="nx"&gt;click&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kd"&gt;function&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;e&lt;/span&gt;&lt;span class="p"&gt;){&lt;/span&gt;
+  &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nx"&gt;ajax&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt;
+    &lt;span class="nx"&gt;url&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;/get_more_lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="nx"&gt;success&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="kd"&gt;function&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;response&lt;/span&gt;&lt;span class="p"&gt;){&lt;/span&gt;
+      &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;response&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;#results&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="nx"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nx"&gt;response&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+      &lt;span class="p"&gt;}&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="nx"&gt;$&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;#more-lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="nx"&gt;addClass&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;disabled&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+      &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+  &lt;span class="p"&gt;});&lt;/span&gt;
+&lt;span class="p"&gt;});&lt;/span&gt;
+&lt;span class="p"&gt;...&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Note : code above is incomplete but interesting part is below.&lt;/p&gt;
+&lt;p&gt;Now we want to test it little bit. For example :&lt;/p&gt;
+&lt;ul class="simple"&gt;
+&lt;li&gt;Ensure that table contains 10 lines at begining&lt;/li&gt;
+&lt;li&gt;Ensure that table contains 15 lines after click on &amp;quot;Get more lines&amp;quot; button&lt;/li&gt;
+&lt;li&gt;Ensure that button becomes disabled if there is no more result&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;It's not really a unit test for js function or django view. Looks like more a quick functional test.&lt;/p&gt;
+&lt;p&gt;Here is the corresponding LiveServerTestCase :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;selenium.webdriver.firefox.webdriver&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;WebDriver&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;selenium.webdriver.support.wait&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;WebDriverWait&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.utils.unittest&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;SkipTest&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.test&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;LiveServerTestCase&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;django.core.urlresolvers&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;reverse&lt;/span&gt;
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;ResultListTestCase&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;LiveServerTestCase&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+
+    &lt;span class="nd"&gt;@classmethod&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;setUpClass&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Instantiate selenium driver instance &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;WebDriver&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="nb"&gt;super&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ResultListTestCase&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;setUpClass&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="nd"&gt;@classmethod&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;tearDownClass&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Quit selenium driver instance &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quit&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="nb"&gt;super&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;BaseSeleniumWebDriverTestCase&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;tearDownClass&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_wait_ajax_complete&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Wait until ajax request is completed &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;WebDriverWait&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;until&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+            &lt;span class="k"&gt;lambda&lt;/span&gt; &lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;execute_script&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;return jQuery.active == 0&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;_has_css_class&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;selector&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;klass&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+&lt;span class="sd"&gt;        Returns True if the element identified by `selector`&lt;/span&gt;
+&lt;span class="sd"&gt;        has the CSS class : `klass`.&lt;/span&gt;
+&lt;span class="sd"&gt;        &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find_element_by_css_selector&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;selector&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_attribute&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;class&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;klass&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;test_get_more_lines&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot; Test result list and &amp;#39;get more lines&amp;#39; button &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+        &lt;span class="c"&gt;# Display tested page&lt;/span&gt;
+        &lt;span class="n"&gt;url&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;reverse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;results_page&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;live_server_url&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="c"&gt;# Ensure 10 lines are displayed&lt;/span&gt;
+        &lt;span class="n"&gt;rows_length&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;lambda&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find_elements_by_css_selector&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;#results tr&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rows_length&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="c"&gt;# Click on &amp;#39;get-more-lines&amp;#39; button&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find_element_by_id&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;get-more-lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;click&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;wait_ajax_complete&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rows_length&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt; &lt;span class="mi"&gt;15&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="c"&gt;# Click again and check button is disabled&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;find_element_by_id&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;get-more-lines&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;click&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;wait_ajax_complete&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="n"&gt;disabled&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;has_css_class&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;#increase-history&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;#39;disabled&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;assertTrue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;disabled&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;On my current project, tests are ran by Jenkins on a headless server, so Selenium can't launch a firefox.
+Awaiting for a specific configuration, I wrapped creation of WebDriver in a try/except like this :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;ResultListTestCase&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;LiveServerTestCase&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+
+    &lt;span class="nd"&gt;@classmethod&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;setUpClass&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;selenium&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;WebDriver&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+            &lt;span class="nb"&gt;super&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ResultListTestCase&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;cls&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;setUpClass&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="k"&gt;raise&lt;/span&gt; &lt;span class="n"&gt;SkipTest&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;Selenium webdriver is not operational&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;This is just a really simple first test but this feature seems pretty cool IMHO :-).&lt;/p&gt;
+</summary><category term="django"></category></entry><entry><title>My short drush cheat sheet</title><link href="http://fle.github.io/my-short-drush-cheat-sheet.html" rel="alternate"></link><updated>2011-01-31T00:00:00+01:00</updated><author><name>Florent Lebreton (fle)</name></author><id>tag:fle.github.io,2011-01-31:my-short-drush-cheat-sheet.html</id><summary type="html">&lt;p&gt;Drush (DRUpal SHell) is a command-line which allows you to administer your Drupal site in console.&lt;/p&gt;
+&lt;p&gt;It can be very useful when you have broken your site and when you can't access to your administration interface.&lt;/p&gt;
+&lt;p&gt;Drush command format:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush &lt;span class="o"&gt;[&lt;/span&gt;options&lt;span class="o"&gt;]&lt;/span&gt; &amp;lt;&lt;span class="nb"&gt;command&lt;/span&gt;&amp;gt; &lt;span class="o"&gt;[&lt;/span&gt;argument&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Below, a few basic commands offered by drush :&lt;/p&gt;
+&lt;p&gt;List all commands and get help:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush
+&lt;span class="gp"&gt;$&lt;/span&gt; drush &lt;span class="nb"&gt;help&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Install Drupal ! (Very useful to deploy a dev instance quickly):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="go"&gt;-- Download latest Drupal ...&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; drush dl drupal
+&lt;span class="go"&gt;-- or select a version ...&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; drush dl drupal --select
+&lt;span class="go"&gt;-- and install it !&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; drush si --account-name&lt;span class="o"&gt;=&lt;/span&gt;&amp;lt;USER&amp;gt; --account-pass&lt;span class="o"&gt;=&lt;/span&gt;&amp;lt;PASS&amp;gt; --db-url&lt;span class="o"&gt;=&lt;/span&gt;mysql://&amp;lt;DB_USER&amp;gt;:&amp;lt;DB_PASS&amp;gt;@localhost/&amp;lt;DB_NAME&amp;gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Clear Drupal caches (used 87 times today):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush cc all
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Install one or more module(s):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush dl -y &amp;lt;MODULE&amp;gt; &lt;span class="o"&gt;[&lt;/span&gt;&amp;lt;MODULE2&amp;gt;, ...&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; drush en -y &amp;lt;MODULE&amp;gt; &lt;span class="o"&gt;[&lt;/span&gt;&amp;lt;MODULE2&amp;gt;, ...&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Disable and uninstall module(s):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush dis -y &amp;lt;MODULE&amp;gt; &lt;span class="o"&gt;[&lt;/span&gt;&amp;lt;MODULE2&amp;gt;, ...&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;span class="gp"&gt;$&lt;/span&gt; drush pm-uninstall -y &amp;lt;MODULE&amp;gt; &lt;span class="o"&gt;[&lt;/span&gt;&amp;lt;MODULE2&amp;gt;, ...&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Export database (intelligently, i.e. without cache tables and other stuff):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush sql-dump --result-file&lt;span class="o"&gt;=&lt;/span&gt;&amp;lt;DUMP_FILE.sql&amp;gt; --gzip
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Launch Drupal cron:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush cron
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Update your Drupal site:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="gp"&gt;$&lt;/span&gt; drush up
+&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Of course, it's a very short list of basic drush commands, this post is just my drush newbie notes taken during &lt;a class="reference external" href="http://twitter.com/juliendubreuil"&gt;JulienD&lt;/a&gt; presentation at #DCNantes. There is many other commands with drush core, some modules can extend this list and you can implement your own drush commands.&lt;/p&gt;
+&lt;p&gt;With some configuration, you can administer two sites or more easily.&lt;/p&gt;
+</summary><category term="drush"></category></entry></feed>

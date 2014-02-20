@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="">	
+<head>
+	<meta charset="utf-8"/>
+	<title>GIT tip : Keep your branch clean with fixup and autosquash - Florent Lebreton</title>	
+	<meta name="author" content="Florent Lebreton (fle)">
+	
+
+	<meta name="description" content="Who is not tired of committing a "Remove pdb" or a "Fix a typo" few minutes or hours after committing a clean feature ? A few time ago, I discovered two useful options in GIT that work together : git commit --fixup and git rebase --autosquash. With these, you can easily merge ...">
+
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:creator" content="@__fle__">
+	<meta name="twitter:title" content="GIT tip : Keep your branch clean with fixup and autosquash">
+	<meta name="twitter:description" content="Who is not tired of committing a "Remove pdb" or a "Fix a typo" few minutes or hours after committing a clean feature ? A few time ago, I discovered two useful options in GIT that work together : git commit --fixup and git rebase --autosquash. With these, you can easily merge ...">
+
+	<link rel="top" href="#" /><link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,300italic,400italic,600italic|Source+Code+Pro' rel='stylesheet' type='text/css'></link>
+	
+	<link rel="stylesheet" href="http://fle.github.io/theme/css/main.css" type="text/css" />
+		
+	  <script type="text/javascript" src="http://fle.github.io/theme/js/custom_scripts.js"></script>
+
+
+    <link href="http://fle.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Florent Lebreton Atom Feed" />
+</head>
+	
+<body>
+
+    <div class="container">
+	  
+	  <header role="banner">
+	    <div class="feeds">
+	        <a href="http://fle.github.io/feeds/all.atom.xml" rel="alternate"><img src="/theme/images/icons/feed-32px.png" alt="atom feed"/></a>
+	    </div>
+	      <nav class="pages">
+			  <a href="http://fle.github.io/pages/about-me.html">About me</a>
+	      </nav>
+		<a href="http://fle.github.io" class="title">Florent Lebreton</a>
+      </header>
+	
+	  <div class="wrapper">
+
+		  <div role="main" class="content">
+	<article class="full">
+			
+		<h1>GIT tip : Keep your branch clean with fixup and autosquash</h1>
+		
+<div class="metadata">
+  <time datetime="2013-12-04T00:00:00" pubdate>Wed 04 December 2013</time>
+    <address class="vcard author">
+      by <a class="url fn" href="http://fle.github.io/author/florent-lebreton-fle.html">Florent Lebreton (fle)</a>
+    </address>
+  in <a href="http://fle.github.io/category/quick-tips.html">quick tips</a>
+<p class="tags">tagged <a href="http://fle.github.io/tag/git.html">git</a></p></div>		
+		<p>Who is not tired of committing a &quot;Remove pdb&quot; or a &quot;Fix a typo&quot; few minutes or hours after committing a clean feature ? A few time ago, I discovered two useful options in GIT that work together : <tt class="docutils literal">git commit <span class="pre">--fixup</span></tt> and <tt class="docutils literal">git rebase <span class="pre">--autosquash</span></tt>. With these, you can easily merge little fixes with the original feature and keep your branch clean.</p>
+<p>Preferably, you won't use it in a stable or master branch, because rebase rewrites history and can create a big mess, mainly if project counts several developers. It rather can be convenient to clean a development branch before merging it in master.</p>
+<div class="section" id="fixup-autosquash">
+<h2>--fixup &amp; --autosquash</h2>
+<ul class="simple">
+<li><tt class="docutils literal">git commit <span class="pre">--fixup</span> &lt;commit&gt;</tt> automatically marks your commit as a fix of a previous commit</li>
+<li><tt class="docutils literal">git rebase <span class="pre">-i</span> <span class="pre">--autosquash</span></tt> automatically organize merging of these fixup commits and associated normal commits</li>
+</ul>
+</div>
+<div class="section" id="example">
+<h2>Example</h2>
+<p>Take a git repos with a branch <cite>dev</cite>. You intend to commit features A and B:</p>
+<div class="highlight"><pre><span class="gp">$</span> <span class="o">(</span>dev<span class="o">)</span> git add featureA
+<span class="gp">$</span> <span class="o">(</span>dev<span class="o">)</span> git commit -m <span class="s2">&quot;Feature A is done&quot;</span>
+<span class="go">[dev fb2f677] Feature A is done</span>
+<span class="gp">$</span> <span class="o">(</span>dev<span class="o">)</span> git add featureB
+<span class="gp">$</span> <span class="o">(</span>dev<span class="o">)</span> git commit -m <span class="s2">&quot;Feature B is done&quot;</span>
+<span class="go">[dev 733e2ff] Feature B is done</span>
+</pre></div>
+<p>Your work is in progress and you find minor mistakes in Feature A : it's time to use <tt class="docutils literal"><span class="pre">--fixup</span></tt> option !</p>
+<div class="highlight"><pre><span class="gp">$</span> <span class="o">(</span>dev<span class="o">)</span> git add featureA                <span class="c"># you&#39;ve removed a pdb : shameful commit</span>
+<span class="gp">$</span> <span class="o">(</span>dev<span class="o">)</span> git commit --fixup fb2f677
+<span class="go">[dev c5069d5] fixup! Feature A is done</span>
+</pre></div>
+<p>Here, you see that GIT automatically retrieved featureA commit message prefixed by fixup!.</p>
+<p>All work is done, let's see the log:</p>
+<div class="highlight"><pre><span class="gp">$</span> <span class="o">(</span>dev<span class="o">)</span> git log --oneline
+<span class="go">c5069d5 fixup! Feature A is done</span>
+<span class="go">733e2ff Feature B is done</span>
+<span class="go">fb2f677 Feature A is done</span>
+<span class="go">ac5db87 Previous commit</span>
+</pre></div>
+<p>Now, you want to clean your branch before merging it : it's time to use <tt class="docutils literal"><span class="pre">--autosquash</span></tt> option !</p>
+<div class="highlight"><pre><span class="gp">$</span> <span class="o">(</span>dev<span class="o">)</span> git rebase -i --autosquash ac5db87
+<span class="go">pick fb2f677 Feature A is done</span>
+<span class="go">fixup c5069d5 fixup! Feature A is done</span>
+<span class="go">fixup c9e138f fixup! Feature A is done</span>
+<span class="go">pick 733e2ff Feature B is done</span>
+</pre></div>
+<p>This command has opened your editor with lines above. Just save &amp; quit and ... :</p>
+<div class="highlight"><pre><span class="gp">$</span> <span class="o">(</span>dev<span class="o">)</span> git log --oneline
+<span class="go">ff4de2a Feature B is done</span>
+<span class="go">5478cee Feature A is done</span>
+<span class="go">ac5db87 Previous commit</span>
+</pre></div>
+<p>Your shameful commit has been merged properly with the original feature. It's just a shorcut for something you could do otherwise but I find it very convenient :).</p>
+<p>That's all folks !</p>
+<p>EDIT : <tt class="docutils literal">git rebase i <span class="pre">&lt;after-this-commit&gt;</span></tt> must be launched with as argument <cite>the last commit you want to retain as-is</cite>, not the first one you want to change.</p>
+<p>Thanks <a class="reference external" href="http://twitter.com/regilero">regilero</a> &amp; <a class="reference external" href="http://twitter.com/SebCorbin">SebCorbin</a> for reviewing!</p>
+</div>
+	
+
+	</article>
+
+    <p>
+	<a href="https://twitter.com/share" class="twitter-share-button" data-via="" data-lang="en" data-size="large" data-related="">Tweet</a>
+	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+	</p>
+
+	<div class="comments">
+	<h2>Comments !</h2>
+	    <div id="disqus_thread"></div>
+	    <script type="text/javascript">
+	       var disqus_identifier = "git-tip-keep-your-branch-clean-with-fixup-and-autosquash.html";
+	       (function() {
+	       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	       dsq.src = 'http://flegithubio.disqus.com/embed.js';
+	       (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	      })();
+	    </script>
+	</div>
+
+		  </div>	
+		  
+		  <div class="sidebar">
+		    <div class="sidebar-container" id="sidebar-container-fixed">
+
+	            <aside>
+	              <h2>About</h2>
+			      <p>
+                    Software engineer and trainer at Makina Corpus Nantes. Python, Django and GIT addict. Dance, sail, take photos.
+			      </p>
+			    </aside>
+
+  	          <nav>
+	            <h2>Categories</h2>
+	            <ul>
+	                <li ><a href="http://fle.github.io/category/development.html">development</a></li>
+	                <li ><a href="http://fle.github.io/category/geek-stuff.html">geek stuff</a></li>
+	                <li class="active"><a href="http://fle.github.io/category/quick-tips.html">quick tips</a></li>
+	            </ul>
+	          </nav>
+
+	            <aside>
+	            <h2>Social</h2>
+			      <ul class="social">
+				    <li><a href="http://www.linkedin.com/in/florentlebreton">linkedin</a><i></i></li>
+				    <li><a href="https://twitter.com/__fle__">twitter</a><i></i></li>
+				    <li><a href="https://plus.google.com/114836609462836450047">google</a><i></i></li>
+				    <li><a href="https://github.com/fle">github</a><i></i></li>
+			      </ul>
+			    </aside>
+
+	            <aside>
+	              <h2>Blogroll</h2>
+	              <ul>
+	                  <li><a href="http://makina-corpus.com/blog">Makina Corpus</a></li>
+	                  <li><a href="http://planetdjango.org">Planet Django</a></li>
+	                  <li><a href="http://regilero.github.io">Regliero's blog</a></li>
+	              </ul>
+	            </aside>
+	        </div>
+		  </div>
+
+	  </div>
+
+      <footer>
+		<p role="contentinfo">
+		  Florent Lebreton (fle) - Proudly powered by <a href="http://alexis.notmyidea.org/pelican/">pelican</a>. Theme <a href="https://github.com/fle/pelican-simplegrey">pelican-simplegrey</a>.
+    	</p>
+
+	  </footer>	
+
+	</div>
+	
+	  <script>
+		var _gaq=[['_setAccount','UA-18281356-9'],['_trackPageview']];
+		(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+		g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+		s.parentNode.insertBefore(g,s)}(document,'script'));
+	  </script>
+
+</body>
+</html>

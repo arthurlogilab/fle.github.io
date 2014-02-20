@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="">	
+<head>
+	<meta charset="utf-8"/>
+	<title>Playing with LiveServerTestCase and Selenium - Florent Lebreton</title>	
+	<meta name="author" content="Florent Lebreton (fle)">
+	
+
+	<meta name="description" content="At "Djangocon Tolosa", Julien phalip spoke about a new feature in django 1.4, LiveServerTestCase. A LiveServerTestCase launches a true HTTP server and gives a way to make HTTP requests in test cases. It can be useful to test REST API over a full HTTP protocol stack. Or, associated with ...">
+
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:creator" content="@__fle__">
+	<meta name="twitter:title" content="Playing with LiveServerTestCase and Selenium">
+	<meta name="twitter:description" content="At "Djangocon Tolosa", Julien phalip spoke about a new feature in django 1.4, LiveServerTestCase. A LiveServerTestCase launches a true HTTP server and gives a way to make HTTP requests in test cases. It can be useful to test REST API over a full HTTP protocol stack. Or, associated with ...">
+
+	<link rel="top" href="#" /><link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,300italic,400italic,600italic|Source+Code+Pro' rel='stylesheet' type='text/css'></link>
+	
+	<link rel="stylesheet" href="http://fle.github.io/theme/css/main.css" type="text/css" />
+		
+	  <script type="text/javascript" src="http://fle.github.io/theme/js/custom_scripts.js"></script>
+
+
+    <link href="http://fle.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Florent Lebreton Atom Feed" />
+</head>
+	
+<body>
+
+    <div class="container">
+	  
+	  <header role="banner">
+	    <div class="feeds">
+	        <a href="http://fle.github.io/feeds/all.atom.xml" rel="alternate"><img src="/theme/images/icons/feed-32px.png" alt="atom feed"/></a>
+	    </div>
+	      <nav class="pages">
+			  <a href="http://fle.github.io/pages/about-me.html">About me</a>
+	      </nav>
+		<a href="http://fle.github.io" class="title">Florent Lebreton</a>
+      </header>
+	
+	  <div class="wrapper">
+
+		  <div role="main" class="content">
+	<article class="full">
+			
+		<h1>Playing with LiveServerTestCase and Selenium</h1>
+		
+<div class="metadata">
+  <time datetime="2012-11-25T00:00:00" pubdate>Sun 25 November 2012</time>
+    <address class="vcard author">
+      by <a class="url fn" href="http://fle.github.io/author/florent-lebreton-fle.html">Florent Lebreton (fle)</a>
+    </address>
+  in <a href="http://fle.github.io/category/development.html">development</a>
+<p class="tags">tagged <a href="http://fle.github.io/tag/django.html">django</a></p></div>		
+		<p>At &quot;Djangocon Tolosa&quot;, Julien phalip spoke about a new feature in django 1.4, LiveServerTestCase. A LiveServerTestCase launches a true HTTP server and gives a way to make HTTP requests in test cases. It can be useful to test REST API over a full HTTP protocol stack. Or, associated with Selenium, it can be powerful to make functionnal tests, on a view using ajax for example.</p>
+<p>Let's try it with a simple usecase :
+* a view which displays 10 first results of a dummy search in a &lt;table&gt;
+* a view which returns dynamically the 5 next results
+* a button wich launches an ajax request on this second view to fetch 5 more results and append it to the current list</p>
+<p>Here is a simple code extract of each part :</p>
+<div class="highlight"><pre><span class="c"># urls.py</span>
+<span class="o">...</span>
+<span class="n">url</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="s">r&#39;^results_page$&#39;</span><span class="p">,</span>
+    <span class="n">view</span><span class="o">=</span><span class="s">&#39;results_page&#39;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s">&#39;results_page&#39;</span><span class="p">),</span>
+<span class="n">url</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="s">r&#39;^get_more_lines$&#39;</span><span class="p">,</span>
+    <span class="n">view</span><span class="o">=</span><span class="s">&#39;get_more_lines&#39;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s">&#39;get_more_lines&#39;</span><span class="p">),</span>
+<span class="o">...</span>
+
+<span class="c"># views.py</span>
+<span class="o">...</span>
+<span class="k">def</span> <span class="nf">results_page</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Renders a page with result list in a &lt;table&gt; &quot;&quot;&quot;</span>
+
+<span class="k">def</span> <span class="nf">get_more_lines</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Returns dynamically 5 more lines to be displayed in table &quot;&quot;&quot;</span>
+<span class="o">...</span>
+</pre></div>
+<div class="highlight"><pre><span class="x"># template.html</span>
+<span class="x">...</span>
+<span class="x">&lt;table id=&quot;results&quot;&gt;</span>
+<span class="x">  </span><span class="cp">{%</span> <span class="k">for</span> <span class="nv">r</span> <span class="k">in</span> <span class="nv">results</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    &lt;tr&gt;&lt;td&gt;</span><span class="cp">{{</span> <span class="nv">r</span> <span class="cp">}}</span><span class="x">&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="x">  </span><span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">&lt;/table&gt;</span>
+<span class="x">&lt;a id=&quot;more-lines&quot; href=&quot;#&quot;&gt;Get more lines&lt;/a&gt;</span>
+<span class="x">...</span>
+</pre></div>
+<div class="highlight"><pre><span class="c1">// scripts.js</span>
+<span class="p">...</span>
+<span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#more-lines&#39;</span><span class="p">).</span><span class="nx">click</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">e</span><span class="p">){</span>
+  <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+    <span class="nx">url</span><span class="o">:</span> <span class="s1">&#39;/get_more_lines&#39;</span><span class="p">,</span>
+    <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">response</span><span class="p">){</span>
+      <span class="k">if</span><span class="p">(</span><span class="nx">response</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#results&#39;</span><span class="p">).</span><span class="nx">append</span><span class="p">(</span><span class="nx">response</span><span class="p">);</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#more-lines&#39;</span><span class="p">).</span><span class="nx">addClass</span><span class="p">(</span><span class="s1">&#39;disabled&#39;</span><span class="p">);</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">});</span>
+<span class="p">});</span>
+<span class="p">...</span>
+</pre></div>
+<p>Note : code above is incomplete but interesting part is below.</p>
+<p>Now we want to test it little bit. For example :</p>
+<ul class="simple">
+<li>Ensure that table contains 10 lines at begining</li>
+<li>Ensure that table contains 15 lines after click on &quot;Get more lines&quot; button</li>
+<li>Ensure that button becomes disabled if there is no more result</li>
+</ul>
+<p>It's not really a unit test for js function or django view. Looks like more a quick functional test.</p>
+<p>Here is the corresponding LiveServerTestCase :</p>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">selenium.webdriver.firefox.webdriver</span> <span class="kn">import</span> <span class="n">WebDriver</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.support.wait</span> <span class="kn">import</span> <span class="n">WebDriverWait</span>
+<span class="kn">from</span> <span class="nn">django.utils.unittest</span> <span class="kn">import</span> <span class="n">SkipTest</span>
+<span class="kn">from</span> <span class="nn">django.test</span> <span class="kn">import</span> <span class="n">LiveServerTestCase</span>
+<span class="kn">from</span> <span class="nn">django.core.urlresolvers</span> <span class="kn">import</span> <span class="n">reverse</span>
+
+<span class="k">class</span> <span class="nc">ResultListTestCase</span><span class="p">(</span><span class="n">LiveServerTestCase</span><span class="p">):</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">setUpClass</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Instantiate selenium driver instance &quot;&quot;&quot;</span>
+        <span class="n">cls</span><span class="o">.</span><span class="n">selenium</span> <span class="o">=</span> <span class="n">WebDriver</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ResultListTestCase</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">setUpClass</span><span class="p">()</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">tearDownClass</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Quit selenium driver instance &quot;&quot;&quot;</span>
+        <span class="n">cls</span><span class="o">.</span><span class="n">selenium</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BaseSeleniumWebDriverTestCase</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">tearDownClass</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_wait_ajax_complete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Wait until ajax request is completed &quot;&quot;&quot;</span>
+        <span class="n">WebDriverWait</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">selenium</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s">&quot;return jQuery.active == 0&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_has_css_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selector</span><span class="p">,</span> <span class="n">klass</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if the element identified by `selector`</span>
+<span class="sd">        has the CSS class : `klass`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">selenium</span><span class="o">.</span><span class="n">find_element_by_css_selector</span><span class="p">(</span><span class="n">selector</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">get_attribute</span><span class="p">(</span><span class="s">&#39;class&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">klass</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">test_get_more_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Test result list and &#39;get more lines&#39; button &quot;&quot;&quot;</span>
+
+        <span class="c"># Display tested page</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">reverse</span><span class="p">(</span><span class="s">&#39;results_page&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selenium</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">live_server_url</span> <span class="o">+</span> <span class="n">url</span><span class="p">)</span>
+
+        <span class="c"># Ensure 10 lines are displayed</span>
+        <span class="n">rows_length</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">selenium</span><span class="o">.</span><span class="n">find_elements_by_css_selector</span><span class="p">(</span><span class="s">&#39;#results tr&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">rows_length</span><span class="p">(),</span> <span class="mi">10</span><span class="p">)</span>
+
+        <span class="c"># Click on &#39;get-more-lines&#39; button</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selenium</span><span class="o">.</span><span class="n">find_element_by_id</span><span class="p">(</span><span class="s">&#39;get-more-lines&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait_ajax_complete</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">rows_length</span><span class="p">(),</span> <span class="mi">15</span><span class="p">)</span>
+
+        <span class="c"># Click again and check button is disabled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selenium</span><span class="o">.</span><span class="n">find_element_by_id</span><span class="p">(</span><span class="s">&#39;get-more-lines&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait_ajax_complete</span><span class="p">()</span>
+        <span class="n">disabled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_css_class</span><span class="p">(</span><span class="s">&#39;#increase-history&#39;</span><span class="p">,</span> <span class="s">&#39;disabled&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">disabled</span><span class="p">)</span>
+</pre></div>
+<p>On my current project, tests are ran by Jenkins on a headless server, so Selenium can't launch a firefox.
+Awaiting for a specific configuration, I wrapped creation of WebDriver in a try/except like this :</p>
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">ResultListTestCase</span><span class="p">(</span><span class="n">LiveServerTestCase</span><span class="p">):</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">setUpClass</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">selenium</span> <span class="o">=</span> <span class="n">WebDriver</span><span class="p">()</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">ResultListTestCase</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">setUpClass</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SkipTest</span><span class="p">(</span><span class="s">&#39;Selenium webdriver is not operational&#39;</span><span class="p">)</span>
+</pre></div>
+<p>This is just a really simple first test but this feature seems pretty cool IMHO :-).</p>
+	
+
+	</article>
+
+    <p>
+	<a href="https://twitter.com/share" class="twitter-share-button" data-via="" data-lang="en" data-size="large" data-related="">Tweet</a>
+	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+	</p>
+
+	<div class="comments">
+	<h2>Comments !</h2>
+	    <div id="disqus_thread"></div>
+	    <script type="text/javascript">
+	       var disqus_identifier = "playing-with-liveservertestcase-and-selenium.html";
+	       (function() {
+	       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	       dsq.src = 'http://flegithubio.disqus.com/embed.js';
+	       (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	      })();
+	    </script>
+	</div>
+
+		  </div>	
+		  
+		  <div class="sidebar">
+		    <div class="sidebar-container" id="sidebar-container-fixed">
+
+	            <aside>
+	              <h2>About</h2>
+			      <p>
+                    Software engineer and trainer at Makina Corpus Nantes. Python, Django and GIT addict. Dance, sail, take photos.
+			      </p>
+			    </aside>
+
+  	          <nav>
+	            <h2>Categories</h2>
+	            <ul>
+	                <li class="active"><a href="http://fle.github.io/category/development.html">development</a></li>
+	                <li ><a href="http://fle.github.io/category/geek-stuff.html">geek stuff</a></li>
+	                <li ><a href="http://fle.github.io/category/quick-tips.html">quick tips</a></li>
+	            </ul>
+	          </nav>
+
+	            <aside>
+	            <h2>Social</h2>
+			      <ul class="social">
+				    <li><a href="http://www.linkedin.com/in/florentlebreton">linkedin</a><i></i></li>
+				    <li><a href="https://twitter.com/__fle__">twitter</a><i></i></li>
+				    <li><a href="https://plus.google.com/114836609462836450047">google</a><i></i></li>
+				    <li><a href="https://github.com/fle">github</a><i></i></li>
+			      </ul>
+			    </aside>
+
+	            <aside>
+	              <h2>Blogroll</h2>
+	              <ul>
+	                  <li><a href="http://makina-corpus.com/blog">Makina Corpus</a></li>
+	                  <li><a href="http://planetdjango.org">Planet Django</a></li>
+	                  <li><a href="http://regilero.github.io">Regliero's blog</a></li>
+	              </ul>
+	            </aside>
+	        </div>
+		  </div>
+
+	  </div>
+
+      <footer>
+		<p role="contentinfo">
+		  Florent Lebreton (fle) - Proudly powered by <a href="http://alexis.notmyidea.org/pelican/">pelican</a>. Theme <a href="https://github.com/fle/pelican-simplegrey">pelican-simplegrey</a>.
+    	</p>
+
+	  </footer>	
+
+	</div>
+	
+	  <script>
+		var _gaq=[['_setAccount','UA-18281356-9'],['_trackPageview']];
+		(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+		g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+		s.parentNode.insertBefore(g,s)}(document,'script'));
+	  </script>
+
+</body>
+</html>

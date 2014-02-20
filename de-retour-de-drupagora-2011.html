@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="">	
+<head>
+	<meta charset="utf-8"/>
+	<title>De retour de Drupagora 2011 - Florent Lebreton</title>	
+	<meta name="author" content="Florent Lebreton (fle)">
+	
+
+	<meta name="description" content="Je reviens de la première édition de Drupagora, à Paris, qui se veut plus oriéntée chefs de projet/décideurs que les habituels DrupalCamps de geeks. Au final, une formule plutôt satisfaisante : Conférences intéressantes, beaucoup de retours d'expérience et un peu de technique quand même (ouf !).">
+
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:creator" content="@__fle__">
+	<meta name="twitter:title" content="De retour de Drupagora 2011">
+	<meta name="twitter:description" content="Je reviens de la première édition de Drupagora, à Paris, qui se veut plus oriéntée chefs de projet/décideurs que les habituels DrupalCamps de geeks. Au final, une formule plutôt satisfaisante : Conférences intéressantes, beaucoup de retours d'expérience et un peu de technique quand même (ouf !).">
+
+	<link rel="top" href="#" /><link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,300italic,400italic,600italic|Source+Code+Pro' rel='stylesheet' type='text/css'></link>
+	
+	<link rel="stylesheet" href="http://fle.github.io/theme/css/main.css" type="text/css" />
+		
+	  <script type="text/javascript" src="http://fle.github.io/theme/js/custom_scripts.js"></script>
+
+
+    <link href="http://fle.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Florent Lebreton Atom Feed" />
+</head>
+	
+<body>
+
+    <div class="container">
+	  
+	  <header role="banner">
+	    <div class="feeds">
+	        <a href="http://fle.github.io/feeds/all.atom.xml" rel="alternate"><img src="/theme/images/icons/feed-32px.png" alt="atom feed"/></a>
+	    </div>
+	      <nav class="pages">
+			  <a href="http://fle.github.io/pages/about-me.html">About me</a>
+	      </nav>
+		<a href="http://fle.github.io" class="title">Florent Lebreton</a>
+      </header>
+	
+	  <div class="wrapper">
+
+		  <div role="main" class="content">
+	<article class="full">
+			
+		<h1>De retour de Drupagora 2011</h1>
+		
+<div class="metadata">
+  <time datetime="2011-11-18T00:00:00" pubdate>Fri 18 November 2011</time>
+    <address class="vcard author">
+      by <a class="url fn" href="http://fle.github.io/author/florent-lebreton-fle.html">Florent Lebreton (fle)</a>
+    </address>
+  in <a href="http://fle.github.io/category/geek-stuff.html">geek stuff</a>
+<p class="tags">tagged <a href="http://fle.github.io/tag/drupal.html">drupal</a></p></div>		
+		<p>Je reviens de la première édition de Drupagora, à Paris, qui se veut plus oriéntée chefs de projet/décideurs que les habituels DrupalCamps de geeks.
+Au final, une formule plutôt satisfaisante : Conférences intéressantes, beaucoup de retours d'expérience et un peu de technique quand même (ouf !).</p>
+<div class="section" id="mobilize-don-t-miniaturize">
+<h2>Mobilize, don't miniaturize</h2>
+<div class="section" id="un-premier-constat-de-base">
+<h3>Un premier constat de base</h3>
+<p>Le mobinaute :
+* est boulimique d'information, très rapide, très volatile
+* navigue avec une connexion lente et instable
+* navigue sur un device peu performant</p>
+<p>Il faut donc faire : léger, simple, concis, fontionnel</p>
+</div>
+<div class="section" id="la-mauvaise-idee-a-la-mode-une-seule-url-media-queries">
+<h3>1. La mauvaise idée à la mode : une seule URL + Media Queries</h3>
+<p>Le responsive design n'est pas la panacée. L'idée est tentante, mais MediaQueries fait seulement de la réorganisation d'affichage, ce qui ne règle pas les problèmes d'ergonomie et de performances :
+* le volume de données transféré est trop gros : DOM (surtout avec Drupal), images, js, css
+* la consommation CPU est trop importante : scripts js et animations
+* le contenu est trop long : articles trop longs, trop de blocs, ...</p>
+<p>=&gt; Cette solution est donc à réserver pour un site simple et léger (évenementiel par exemple)</p>
+</div>
+<div class="section" id="une-solution-plus-aboutie-2-url-2-themes">
+<h3>2. Une solution plus aboutie : 2 URL + 2 themes</h3>
+<ul>
+<li><p class="first">(MobileTools + Domains + DomainThemes + DomainAccess + DomainViews + Panels, TinySrc)</p>
+</li>
+<li><p class="first">Une URL de base pour le site sur ordinateur (rien de particulier à ce niveau)</p>
+</li>
+<li><p class="first">Une URL pour device mobile. Quelques recommandations pour le version mobile :</p>
+<blockquote>
+<p>Une des idées importantes est de profiter de la modernité des navigateurs mobiles (CSS3, HTML5, Storage) !!!</p>
+<p>Au niveau du thème</p>
+<blockquote>
+<ul class="simple">
+<li>surcharger les .tpl pour alléger le DOM (DomainThemes)</li>
+<li>penser au responsive design pour les différents devices (OmegaTheme ou AdaptiveTheme + PanelEverywhere + TinySrc)</li>
+<li>éviter au maximum le javascript et la manipulation du DOM (consommation CPU importante) =&gt; Penser au CSS3, notamment à Translate3D (qui utilise le GPU et donc soulage le CPU).</li>
+<li>pour les formulaires, l'audio, la vidéo, éviter là encore la javascript / Flash =&gt; Penser au HTML5</li>
+<li>pour le js réellement nécessaire, se limiter à DOM Selector API ou jQuery Mobile</li>
+<li>pour les sessions et le cache, éviter l'utilisation de cookies (transfert de data) =&gt;  Penser au Session storage, Local storage, DB storage</li>
+</ul>
+</blockquote>
+<p>Au niveau du contenu</p>
+<blockquote>
+<ul class="simple">
+<li>offrir la possibilité de publier une version résumée des articles (DomainAccess)</li>
+<li>offrir la possibilité de publier une partie d'une page composite (variantes de Panel, Context, ...)</li>
+</ul>
+</blockquote>
+</blockquote>
+</li>
+</ul>
+<p>=&gt; On a une version du site réellement adaptée au mobile avec :</p>
+<blockquote>
+<ul class="simple">
+<li>Un contenu allégé, adapté au mode de lecture du mobinaute</li>
+<li>Peu de HTML</li>
+<li>Pas de JS</li>
+<li>Beaucoup de cache navigateur</li>
+</ul>
+</blockquote>
+<p>La gestion des 2 URLS nécessite:</p>
+<blockquote>
+<ul class="simple">
+<li>Plan de redirection : il doit être implémenter au plus tôt dans l'architecture  (load-balancer -&gt; proxy-cache -&gt; apache -&gt; Drupal si pas possible de faire autrement)</li>
+<li>Détection de browser : Device detection =&gt; WURFL (plus OpenSource) vs. Browser detection =&gt; BrowserCap</li>
+</ul>
+<p>Attention à bien mettre en cache la redirection dans les headers HTTP pour ne pas la recalculer à chaque fois !</p>
+</blockquote>
+<p>Exemple d'implémentation complète par Adyax : societegenerale.com</p>
+<p>Les slides : <a class="reference external" href="http://www.drupagora.com/sites/default/files/slide/Drupal_et_Mobilite.pdf">http://www.drupagora.com/sites/default/files/slide/Drupal_et_Mobilite.pdf</a></p>
+</div>
+</div>
+<div class="section" id="reussir-son-referencement-et-profiter-de-drupal">
+<h2>Réussir son référencement et profiter de Drupal</h2>
+<div class="section" id="quelques-trucs-google-auxquels-on-ne-pensent-pas-forcement">
+<h3>Quelques trucs Google auxquels on ne pensent pas forcément</h3>
+<ul class="simple">
+<li>&quot;Être en 1ère page de Google n'a plus vraiment de sens&quot; : Penser à se référencer sur &quot;tous&quot; les sites google : maps, youtube, shooping, ... selon le type de site</li>
+<li>Il est très largement préférable se positionner sur une multitude d'expressions qualifiées de 4/5/6 mots (longue traine), les expressions génériques sont inutiles</li>
+<li>Quand on fait des tests de référencement, attention à la personnalisation des résultats qui peut être trompeuse (cookies, géoloc, sites visités régulièrement, ...)</li>
+</ul>
+</div>
+<div class="section" id="evolutions-des-algorithmes-google-en-2010-11-12">
+<h3>Évolutions des algorithmes Google en 2010-11-12-...</h3>
+<ul class="simple">
+<li>Google Panda =&gt; Les pages à forte valeur ajoutée ont beaucoup plus d'importance que les aggrégateurs (news, comparateurs de prix, ...)</li>
+<li>Vers plus de &quot;social ranking&quot; =&gt; Facebook like, Google +1</li>
+<li>Arrivée du &quot;person ranking&quot; =&gt; La popularité de l'auteur de la page (Twitter, Facebook, Blog) va avoir une importance dans le positionnement de la page dans les prochains mois</li>
+</ul>
+</div>
+<div class="section" id="la-regle-des-80-20-pour-le-referencement-d-un-site-drupal">
+<h3>La règle des 80/20 pour le référencement d'un site Drupal</h3>
+<p>Avec Drupal, 80% de l'optimisation du référencement d'un site =  5 optimisations:</p>
+<blockquote>
+<ol class="arabic simple">
+<li>Un bon title avec les bons mots-clés (en restant naturel : accents, majuscules, ...)</li>
+<li>Une bonne URL (sans paramètre, avec les bons mots-clés)</li>
+<li>Une bonne meta description pour attirer le clic (accroche du type &quot;Livraison gratuite&quot;)</li>
+<li>Une bonne structure de site</li>
+<li>Une bonne structure sémantique HTML (h*, ul/li)</li>
+<li>(bonus) Avoir un title + H1 + URL indépendants les uns des autres !</li>
+</ol>
+</blockquote>
+<p>Les autres 20% :</p>
+<blockquote>
+Fil d'Ariane, taux de rebond (!!!), balises alternatives des images/vidéos, micro-formats, ...</blockquote>
+</div>
+<div class="section" id="quelques-modules-drupal">
+<h3>Quelques modules Drupal</h3>
+<ul class="simple">
+<li>URLs : PathAuto, PathAlias, PathRedirect, GlobalRedirect, Token</li>
+<li>Title : PageTitle, Taxonomy/Title</li>
+<li>Metas : Nodewords</li>
+<li>Sitemap : SitemapXML</li>
+<li>Linking interne : CKELink</li>
+</ul>
+<p>Les slides : <a class="reference external" href="http://www.drupagora.com/sites/default/files/slide/presentation-Sebastien-Monnier-Woptimo-drupagora%20-%20V2.pptx">http://www.drupagora.com/sites/default/files/slide/presentation-Sebastien-Monnier-Woptimo-drupagora%20-%20V2.pptx</a></p>
+</div>
+</div>
+<div class="section" id="gestion-unifiee-des-medias-chez-radio-france">
+<h2>Gestion unifiée des medias chez Radio France</h2>
+<p>RadioFrance est confronté au problème classique de la gestion des medias (sous D6 pour le moment) sur plusieurs sites. Leurs contraintes sont les suivantes :</p>
+<blockquote>
+<ul class="simple">
+<li>Tout type de médias (photo, audio, video, flux externe, objets personnalisés)</li>
+<li>Gestion de différents droits, licences, copyrights, expiration selon le media, la source, ...</li>
+<li>Différents render de chaque media selon le context d'affichage (dans un wysiwyg ou non, sur device mobile, ...)</li>
+<li>~ 1.000.000 de nodes</li>
+</ul>
+</blockquote>
+<p>L'implémentation technique est basée sur le module <a class="reference external" href="http://drupal.org/project/scald">Scald</a>, initialement développé &amp; utilisé par la radio publique de Chicago :</p>
+<blockquote>
+<ul class="simple">
+<li>gère n'importe quel media</li>
+<li>a son propre type de stockage unifiant (atoms) pour pallier à l'absence d'Entity sur D6</li>
+<li>a sa propre gestion de cache</li>
+<li>possède une gestion de &quot;providers&quot; pour pouvoir gérer des types de contenus media personnalisés !</li>
+<li>D6 seulement, mais le portage D7 est prévu pour Q1 2012</li>
+</ul>
+</blockquote>
+<p>La solution construite par RadioFrance consiste en une bibliothèque partagée qui liste tous les medias disponibles au contributeur (Scald + Views + Lightbox):</p>
+<blockquote>
+<ul class="simple">
+<li>visible et accessible en permanence dans un bandeau droit vertical,</li>
+<li>filtres ajax (titre, type de media, tags, licences, ...) + enregistrement de recherches personnalisées,</li>
+<li>prévisualisation de n'importe quel media en lightbox</li>
+<li>ajout d'un nouveau media lightbox (sans quitter le node en cours de création donc !)</li>
+</ul>
+</blockquote>
+<p>L'intégration d'un media dans un contenu se fait par un simple Drag &amp; Drop :</p>
+<blockquote>
+<ul>
+<li><p class="first">soit directement dans un WYSIWYG, avec le rendu final automatique. Exemple :</p>
+<blockquote>
+<ul class="simple">
+<li>pour une photo : affichage de l'image + légende + copyright,</li>
+<li>pour un audio ou une video : affichage du player thémé.</li>
+</ul>
+</blockquote>
+</li>
+<li><p class="first">soit dans un fieldset du formulaire (stockage dans un field caché)</p>
+</li>
+</ul>
+</blockquote>
+<p>Ergonomiquement pour le contributeur ... c'est très sympa !</p>
+<p>Pour le passage à D7, RadioFrance hésite entre Scald et Media :</p>
+<blockquote>
+<ul class="simple">
+<li>Entity rend redondante la couche d'abstraction créée par Scald avec Atom</li>
+<li>Pour le moment, l'interface et les fonctionnalités de Media sont plus basiques que Scald (integration Views inexistante ou très récente, gestion pauvre des licences/expiration, ...), mais il y a bien sûr la possibilité d'ajouter des plugins</li>
+<li>Le développement de Media avance vite, et rattrape petit à petit Scald</li>
+</ul>
+<p>=&gt; Selon RadioFrance, impossible d'être influent sur l'orientation de Media face à Acquia, donc RadioFrance va choisir d'aider au portage de Scald sur D7 plutôt que de contribuer à Media ...</p>
+</blockquote>
+<p>A tester aussi : le module <a class="reference external" href="http://drupal.org/project/mediafront">MediaFront</a> basé sur Media.</p>
+</div>
+	
+
+	</article>
+
+    <p>
+	<a href="https://twitter.com/share" class="twitter-share-button" data-via="" data-lang="en" data-size="large" data-related="">Tweet</a>
+	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+	</p>
+
+	<div class="comments">
+	<h2>Comments !</h2>
+	    <div id="disqus_thread"></div>
+	    <script type="text/javascript">
+	       var disqus_identifier = "de-retour-de-drupagora-2011.html";
+	       (function() {
+	       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	       dsq.src = 'http://flegithubio.disqus.com/embed.js';
+	       (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	      })();
+	    </script>
+	</div>
+
+		  </div>	
+		  
+		  <div class="sidebar">
+		    <div class="sidebar-container" id="sidebar-container-fixed">
+
+	            <aside>
+	              <h2>About</h2>
+			      <p>
+                    Software engineer and trainer at Makina Corpus Nantes. Python, Django and GIT addict. Dance, sail, take photos.
+			      </p>
+			    </aside>
+
+  	          <nav>
+	            <h2>Categories</h2>
+	            <ul>
+	                <li ><a href="http://fle.github.io/category/development.html">development</a></li>
+	                <li class="active"><a href="http://fle.github.io/category/geek-stuff.html">geek stuff</a></li>
+	                <li ><a href="http://fle.github.io/category/quick-tips.html">quick tips</a></li>
+	            </ul>
+	          </nav>
+
+	            <aside>
+	            <h2>Social</h2>
+			      <ul class="social">
+				    <li><a href="http://www.linkedin.com/in/florentlebreton">linkedin</a><i></i></li>
+				    <li><a href="https://twitter.com/__fle__">twitter</a><i></i></li>
+				    <li><a href="https://plus.google.com/114836609462836450047">google</a><i></i></li>
+				    <li><a href="https://github.com/fle">github</a><i></i></li>
+			      </ul>
+			    </aside>
+
+	            <aside>
+	              <h2>Blogroll</h2>
+	              <ul>
+	                  <li><a href="http://makina-corpus.com/blog">Makina Corpus</a></li>
+	                  <li><a href="http://planetdjango.org">Planet Django</a></li>
+	                  <li><a href="http://regilero.github.io">Regliero's blog</a></li>
+	              </ul>
+	            </aside>
+	        </div>
+		  </div>
+
+	  </div>
+
+      <footer>
+		<p role="contentinfo">
+		  Florent Lebreton (fle) - Proudly powered by <a href="http://alexis.notmyidea.org/pelican/">pelican</a>. Theme <a href="https://github.com/fle/pelican-simplegrey">pelican-simplegrey</a>.
+    	</p>
+
+	  </footer>	
+
+	</div>
+	
+	  <script>
+		var _gaq=[['_setAccount','UA-18281356-9'],['_trackPageview']];
+		(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+		g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+		s.parentNode.insertBefore(g,s)}(document,'script'));
+	  </script>
+
+</body>
+</html>

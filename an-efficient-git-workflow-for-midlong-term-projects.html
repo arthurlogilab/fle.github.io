@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="">	
+<head>
+	<meta charset="utf-8"/>
+	<title>An efficient GIT workflow for mid/long term projects - Florent Lebreton</title>	
+	<meta name="author" content="Florent Lebreton (fle)">
+	
+
+	<meta name="description" content="Our full-web CAMM project at Makina Corpus has been going on for nearly two years and is running in production for over 18 months. I think it's my first project without any headache about our codebase and VCS management. So, I'll present our GIT workflow which has proven ...">
+
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:creator" content="@__fle__">
+	<meta name="twitter:title" content="An efficient GIT workflow for mid/long term projects">
+	<meta name="twitter:description" content="Our full-web CAMM project at Makina Corpus has been going on for nearly two years and is running in production for over 18 months. I think it's my first project without any headache about our codebase and VCS management. So, I'll present our GIT workflow which has proven ...">
+
+	<link rel="top" href="#" /><link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,300italic,400italic,600italic|Source+Code+Pro' rel='stylesheet' type='text/css'></link>
+	
+	<link rel="stylesheet" href="http://fle.github.io/theme/css/main.css" type="text/css" />
+		
+	  <script type="text/javascript" src="http://fle.github.io/theme/js/custom_scripts.js"></script>
+
+
+    <link href="http://fle.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Florent Lebreton Atom Feed" />
+</head>
+	
+<body>
+
+    <div class="container">
+	  
+	  <header role="banner">
+	    <div class="feeds">
+	        <a href="http://fle.github.io/feeds/all.atom.xml" rel="alternate"><img src="/theme/images/icons/feed-32px.png" alt="atom feed"/></a>
+	    </div>
+	      <nav class="pages">
+			  <a href="http://fle.github.io/pages/about-me.html">About me</a>
+	      </nav>
+		<a href="http://fle.github.io" class="title">Florent Lebreton</a>
+      </header>
+	
+	  <div class="wrapper">
+
+		  <div role="main" class="content">
+	<article class="full">
+			
+		<h1>An efficient GIT workflow for mid/long term projects</h1>
+		
+<div class="metadata">
+  <time datetime="2014-02-12T00:00:00" pubdate>Wed 12 February 2014</time>
+    <address class="vcard author">
+      by <a class="url fn" href="http://fle.github.io/author/florent-lebreton-fle.html">Florent Lebreton (fle)</a>
+    </address>
+  in <a href="http://fle.github.io/category/development.html">development</a>
+<p class="tags">tagged <a href="http://fle.github.io/tag/git.html">git</a></p></div>		
+		<p>Our <a class="reference external" href="http://makina-corpus.com/realisations/application-de-gmao">full-web CAMM project</a>
+at <a class="reference external" href="http://makina-corpus.com">Makina Corpus</a> has been going on for nearly two
+years and is running in production for over 18 months. I think it's my first project
+without any headache about our codebase and VCS management. So, I'll present our
+GIT workflow which has proven to be very effective for now.</p>
+<div class="section" id="context">
+<h2>Context</h2>
+<ul class="simple">
+<li>Several developers</li>
+<li>Several staging/pre-production servers, several (non-synchronous) production servers</li>
+<li>Monthly releases (more or less) with delivery on staging, then on production servers</li>
+<li>On servers, basecode is directly pulled from the GIT repository with fabric</li>
+</ul>
+</div>
+<div class="section" id="rules">
+<h2>Rules</h2>
+<p>To handle this, we have set some simple rules:</p>
+<div class="box center only-list"><ol class="arabic simple">
+<li>One (and only one) maintainer, who manage GIT repository and releases</li>
+<li>Never commit directly on <tt class="docutils literal">master</tt></li>
+<li>Never rebase <tt class="docutils literal">master</tt> on any branch</li>
+<li>Do not get out of planned workflow</li>
+</ol>
+</div></div>
+<div class="section" id="workflow">
+<h2>Workflow</h2>
+<div class="section" id="master-branch">
+<h3>Master branch</h3>
+<p>Our branch <tt class="docutils literal">master</tt> is the common trunk and simply contains all the codebase of
+the next release. Since we don't work directly on it, it evolves mainly with merges.</p>
+<img alt="Workflow GIT 1" src="/images/010-gw1.png" />
+</div>
+<div class="section" id="development-branches">
+<h3>Development branches</h3>
+<p>When a developer starts a new feature or a bugfix, he creates a new branch from
+<tt class="docutils literal">master</tt> <tt class="docutils literal">HEAD</tt></p>
+<div class="highlight"><pre><span class="gp">$</span> <span class="o">(</span>master<span class="o">)</span> git checkout -b featureA
+<span class="gp">$</span> <span class="o">(</span>featureA<span class="o">)</span> git add -m <span class="s2">&quot;featureA part 1&quot;</span>
+<span class="gp">$</span> <span class="o">(</span>featureA<span class="o">)</span> git add -m <span class="s2">&quot;featureA part 2&quot;</span>
+</pre></div>
+<img alt="Workflow GIT 2" src="/images/010-gw2.png" />
+<p>He follows branch <tt class="docutils literal">master</tt> evolution and regularly ensures his code still works,
+by rebasing his branch <tt class="docutils literal">featureA</tt> on branch <tt class="docutils literal">master</tt>.</p>
+<div class="highlight"><pre><span class="gp">$</span> <span class="o">(</span>featureA<span class="o">)</span> git rebase master
+</pre></div>
+<p>When his developments are done (commits <em>fa1</em> / <em>fa2</em> in schema below), he does a last rebase. Thanks to this:</p>
+<ul class="simple">
+<li>he ensures that the maintainer will be able to merge easily (maintainer should not need to read code deeply and search why there are conflicts)</li>
+<li>if tests pass on development branch after rebase, they should pass on <tt class="docutils literal">master</tt> after merge, so <strong>we ensure that branch ``master`` is always working well</strong></li>
+</ul>
+<p>Possibly, it will be the good time to
+<a class="reference external" href="http://fle.github.io/git-tip-keep-your-branch-clean-with-fixup-and-autosquash.html">clean the development branch</a>
+to let it neat just when it is finished.</p>
+<img alt="Workflow GIT 3" src="/images/010-gw3.png" />
+<p>The maintainer can now merge this branch in <tt class="docutils literal">master</tt> peacefully, without big
+conflict troubles. As the maintainer, I like to use <tt class="docutils literal"><span class="pre">no-ff</span></tt> option to force a
+<em>merge commit</em>, so <strong>history can stay really readable</strong> (we easily see where the
+branch has started and where it has been merged).</p>
+<div class="highlight"><pre><span class="gp">$</span> <span class="o">(</span>master<span class="o">)</span> git merge --no-ff featureA
+</pre></div>
+<img alt="Workflow GIT 4" src="/images/010-gw4.png" />
+<p>Now that the branch has been merged, the developer should remove his development
+branch.</p>
+<div class="highlight"><pre><span class="gp">$</span> <span class="o">(</span>master<span class="o">)</span> git branch -d featureA
+<span class="gp">$</span> <span class="o">(</span>master<span class="o">)</span> git push origin :featureA
+</pre></div>
+</div>
+<div class="section" id="stable-branches">
+<h3>Stable branches</h3>
+<p>When we prepare a release, we update CHANGELOG (with our workflow, a
+<tt class="docutils literal">git log <span class="pre">--oneline</span></tt> should be quite clear to do that) and tag the branch
+<tt class="docutils literal">master</tt> (optional), then we start a stable branch.</p>
+<div class="highlight"><pre><span class="gp">$</span> <span class="o">(</span>master<span class="o">)</span> git tag stable1.0
+<span class="gp">$</span> <span class="o">(</span>master<span class="o">)</span> git checkout -b stable1.0
+<span class="gp">$</span> <span class="o">(</span>stable1.0<span class="o">)</span> git push origin stable1.0
+</pre></div>
+<p>This branch is deployed on different servers.</p>
+<p>While development goes on, we possibly have to do some hotfixes (for example: commit
+<em>hf1</em> in schema below), that must be sent in production quickly.
+These hotfixes are done directly on concerned stable branch.</p>
+<img alt="Workflow GIT 5" src="/images/010-gw5.png" />
+<p>Regularly, the maintainer merges stable branch in <tt class="docutils literal">master</tt> to bring back these
+commits. This action is particularly important before the next release.</p>
+<div class="highlight"><pre><span class="gp">$</span> <span class="o">(</span>master<span class="o">)</span> git merge --no-ff stable1.0
+</pre></div>
+<p>We found this method really useful because:</p>
+<ul class="simple">
+<li>each stable branch has its own life and doesn't take care of branch <tt class="docutils literal">master</tt> evolution, so <strong>we can hotfix stable branche freely and without stress</strong></li>
+<li>we ensure that no hotfix commit has been lost before next release (avoid regressions)</li>
+</ul>
+</div>
+<div class="section" id="a-complete-history-example">
+<h3>A complete history example</h3>
+<img alt="Workflow GIT 6" src="/images/010-gw6.png" />
+</div>
+</div>
+<div class="section" id="conclusion">
+<h2>Conclusion</h2>
+<p>Of course, there are several GIT workflows which can be very efficient, but we found
+many advantages in working with this method, and no real issue:</p>
+<ul class="simple">
+<li>Branch <tt class="docutils literal">master</tt> is always clean and working well</li>
+<li>Developers don't care about GIT whole workflow</li>
+<li>We can fix stable branch without asking ourselves what happened on <tt class="docutils literal">master</tt> since last release</li>
+<li>We ensure that each stable release contains new features and possible fixes</li>
+<li>Always working with branches and using``-no-ff``option make history really clear !</li>
+<li>This workflow is scalable (number of developers or branches doesn't really matter)</li>
+</ul>
+<p>If you liked this article, stay tuned ! I sometimes <a class="reference external" href="http://twitter.com/__fle__">tweet</a> and post <a class="reference external" href="/tag/git.html">GIT articles</a> !</p>
+<p>[FR] Ce billet en français sur le blog de Makina Corpus : <a class="reference external" href="http://makina-corpus.com/blog/metier/un-workflow-git-efficace-pour-les-projets-a-moyen-long-terme">Un workflow GIT efficace pour les projets à moyen/long terme</a> !</p>
+<style type="text/css">
+    article img {
+        display: block;
+        margin: 0 auto;
+    }
+</style></div>
+	
+
+	</article>
+
+    <p>
+	<a href="https://twitter.com/share" class="twitter-share-button" data-via="" data-lang="en" data-size="large" data-related="">Tweet</a>
+	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+	</p>
+
+	<div class="comments">
+	<h2>Comments !</h2>
+	    <div id="disqus_thread"></div>
+	    <script type="text/javascript">
+	       var disqus_identifier = "an-efficient-git-workflow-for-midlong-term-projects.html";
+	       (function() {
+	       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	       dsq.src = 'http://flegithubio.disqus.com/embed.js';
+	       (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	      })();
+	    </script>
+	</div>
+
+		  </div>	
+		  
+		  <div class="sidebar">
+		    <div class="sidebar-container" id="sidebar-container-fixed">
+
+	            <aside>
+	              <h2>About</h2>
+			      <p>
+                    Software engineer and trainer at Makina Corpus Nantes. Python, Django and GIT addict. Dance, sail, take photos.
+			      </p>
+			    </aside>
+
+  	          <nav>
+	            <h2>Categories</h2>
+	            <ul>
+	                <li class="active"><a href="http://fle.github.io/category/development.html">development</a></li>
+	                <li ><a href="http://fle.github.io/category/geek-stuff.html">geek stuff</a></li>
+	                <li ><a href="http://fle.github.io/category/quick-tips.html">quick tips</a></li>
+	            </ul>
+	          </nav>
+
+	            <aside>
+	            <h2>Social</h2>
+			      <ul class="social">
+				    <li><a href="http://www.linkedin.com/in/florentlebreton">linkedin</a><i></i></li>
+				    <li><a href="https://twitter.com/__fle__">twitter</a><i></i></li>
+				    <li><a href="https://plus.google.com/114836609462836450047">google</a><i></i></li>
+				    <li><a href="https://github.com/fle">github</a><i></i></li>
+			      </ul>
+			    </aside>
+
+	            <aside>
+	              <h2>Blogroll</h2>
+	              <ul>
+	                  <li><a href="http://makina-corpus.com/blog">Makina Corpus</a></li>
+	                  <li><a href="http://planetdjango.org">Planet Django</a></li>
+	                  <li><a href="http://regilero.github.io">Regliero's blog</a></li>
+	              </ul>
+	            </aside>
+	        </div>
+		  </div>
+
+	  </div>
+
+      <footer>
+		<p role="contentinfo">
+		  Florent Lebreton (fle) - Proudly powered by <a href="http://alexis.notmyidea.org/pelican/">pelican</a>. Theme <a href="https://github.com/fle/pelican-simplegrey">pelican-simplegrey</a>.
+    	</p>
+
+	  </footer>	
+
+	</div>
+	
+	  <script>
+		var _gaq=[['_setAccount','UA-18281356-9'],['_trackPageview']];
+		(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+		g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+		s.parentNode.insertBefore(g,s)}(document,'script'));
+	  </script>
+
+</body>
+</html>

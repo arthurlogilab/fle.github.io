@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="">	
+<head>
+	<meta charset="utf-8"/>
+	<title>Combine LDAP and classical authentication in django - Florent Lebreton</title>	
+	<meta name="author" content="Florent Lebreton (fle)">
+	
+
+	<meta name="description" content="How to provide an authentication system through a LDAP server and keep classical django authentication available to keep possibility to create users only in django without having them in the LDAP directory and be able to fallback on django authentication for all users in case of a LDAP server failure.">
+
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:creator" content="@__fle__">
+	<meta name="twitter:title" content="Combine LDAP and classical authentication in django">
+	<meta name="twitter:description" content="How to provide an authentication system through a LDAP server and keep classical django authentication available to keep possibility to create users only in django without having them in the LDAP directory and be able to fallback on django authentication for all users in case of a LDAP server failure.">
+
+	<link rel="top" href="#" /><link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,300italic,400italic,600italic|Source+Code+Pro' rel='stylesheet' type='text/css'></link>
+	
+	<link rel="stylesheet" href="http://fle.github.io/theme/css/main.css" type="text/css" />
+		
+	  <script type="text/javascript" src="http://fle.github.io/theme/js/custom_scripts.js"></script>
+
+
+    <link href="http://fle.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Florent Lebreton Atom Feed" />
+</head>
+	
+<body>
+
+    <div class="container">
+	  
+	  <header role="banner">
+	    <div class="feeds">
+	        <a href="http://fle.github.io/feeds/all.atom.xml" rel="alternate"><img src="/theme/images/icons/feed-32px.png" alt="atom feed"/></a>
+	    </div>
+	      <nav class="pages">
+			  <a href="http://fle.github.io/pages/about-me.html">About me</a>
+	      </nav>
+		<a href="http://fle.github.io" class="title">Florent Lebreton</a>
+      </header>
+	
+	  <div class="wrapper">
+
+		  <div role="main" class="content">
+	<article class="full">
+			
+		<h1>Combine LDAP and classical authentication in django</h1>
+		
+<div class="metadata">
+  <time datetime="2013-12-20T00:00:00" pubdate>Fri 20 December 2013</time>
+    <address class="vcard author">
+      by <a class="url fn" href="http://fle.github.io/author/florent-lebreton-fle.html">Florent Lebreton (fle)</a>
+    </address>
+  in <a href="http://fle.github.io/category/development.html">development</a>
+<p class="tags">tagged <a href="http://fle.github.io/tag/django.html">django</a>, <a href="http://fle.github.io/tag/ldap.html">ldap</a></p></div>		
+		<p>Still in our CAMM project <a class="reference external" href="http://makina-corpus.com/realisations/application-de-gmao">JOB</a> at <a class="reference external" href="http://makina-corpus.com">Makina Corpus</a>, we needed to provide an authentication system through a LDAP server. The module <a class="reference external" href="https://pypi.python.org/pypi/django-auth-ldap">django-auth-ldap</a> does most of work itself but we decided to combine this LDAP authentication with the classical django authentication for two reasons:</p>
+<ul class="simple">
+<li>keep possibility to create users only in django without having them in the LDAP directory (mainly for <cite>superusers</cite>);</li>
+<li>be able to fallback on django authentication for all users in case of a LDAP server failure.</li>
+</ul>
+<p>So to handle this, we have to:</p>
+<ul class="simple">
+<li>differentiate LDAP directory users from django database users;</li>
+<li>store password of LDAP users in django to be able to switch on classical authentication;</li>
+<li>implement two custom authentication backends.</li>
+</ul>
+<div class="section" id="user-model">
+<h2>User model</h2>
+<p>We just implement a custom model user with a boolean <tt class="docutils literal">from_ldap</tt> to diffentiate LDAP users from classical django users.</p>
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">MyUser</span><span class="p">(</span><span class="n">AbstractUser</span><span class="p">):</span>
+    <span class="n">from_ldap</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span>
+        <span class="n">_</span><span class="p">(</span><span class="s">&#39;LDAP user&#39;</span><span class="p">),</span>
+        <span class="n">editable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="ldap-authentication-backend">
+<h2>LDAP authentication backend</h2>
+<p>This LDAP backend has two goals :</p>
+<ul class="simple">
+<li>Save user password in django database, thus he'll be able to log in django if LDAP authentication backend is disabled;</li>
+<li>Force <tt class="docutils literal">from_ldap</tt> field to <tt class="docutils literal">True</tt> when a user is created by this way.</li>
+</ul>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">django_auth_ldap.backend</span> <span class="kn">import</span> <span class="n">LDAPBackend</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">get_user_model</span>
+
+<span class="k">class</span> <span class="nc">MyLDAPBackend</span><span class="p">(</span><span class="n">LDAPBackend</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A custom LDAP authentication backend &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">authenticate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Overrides LDAPBackend.authenticate to save user password in django &quot;&quot;&quot;</span>
+
+        <span class="n">user</span> <span class="o">=</span> <span class="n">LDAPBackend</span><span class="o">.</span><span class="n">authenticate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+
+        <span class="c"># If user has successfully logged, save his password in django database</span>
+        <span class="k">if</span> <span class="n">user</span><span class="p">:</span>
+            <span class="n">user</span><span class="o">.</span><span class="n">set_password</span><span class="p">(</span><span class="n">password</span><span class="p">)</span>
+            <span class="n">user</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">user</span>
+
+    <span class="k">def</span> <span class="nf">get_or_create_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">ldap_user</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Overrides LDAPBackend.get_or_create_user to force from_ldap to True &quot;&quot;&quot;</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&#39;username&#39;</span><span class="p">:</span> <span class="n">username</span><span class="p">,</span>
+            <span class="s">&#39;defaults&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;from_ldap&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">user_model</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">user_model</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="classical-authentication-backend">
+<h2>Classical authentication backend</h2>
+<p>We override <tt class="docutils literal">django.contrib.auth.backends.ModelBackend</tt> to ensure LDAP users can't logged in with this one if <tt class="docutils literal">MyLDAPBackend</tt> is available.</p>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">get_backends</span><span class="p">,</span> <span class="n">get_user_model</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth.backends</span> <span class="kn">import</span> <span class="n">ModelBackend</span>
+
+<span class="k">class</span> <span class="nc">MyAuthBackend</span><span class="p">(</span><span class="n">ModelBackend</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A custom authentication backend overriding django ModelBackend &quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_is_ldap_backend_activated</span><span class="p">():</span>
+        <span class="sd">&quot;&quot;&quot; Returns True if MyLDAPBackend is activated &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">MyLDAPBackend</span> <span class="ow">in</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">__class__</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">get_backends</span><span class="p">()]</span>
+
+    <span class="k">def</span> <span class="nf">authenticate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Overrides ModelBackend to refuse LDAP users if MyLDAPBackend is activated &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_ldap_backend_activated</span><span class="p">():</span>
+            <span class="n">user_model</span> <span class="o">=</span> <span class="n">get_user_model</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">user_model</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">from_ldap</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">None</span>
+
+        <span class="n">user</span> <span class="o">=</span> <span class="n">ModelBackend</span><span class="o">.</span><span class="n">authenticate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">user</span>
+</pre></div>
+</div>
+<div class="section" id="django-settings-and-fallback-solution">
+<h2>Django settings and fallback solution</h2>
+<p>Normally, we have our two backends activated :</p>
+<ul class="simple">
+<li>LDAP users can only connect through <tt class="docutils literal">MyLDAPBackend</tt>;</li>
+<li>Django users can connect through <tt class="docutils literal">MyAuthBackend</tt>.</li>
+</ul>
+<div class="highlight"><pre><span class="n">AUTHENTICATION_BACKENDS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">&#39;accounts.backends.MyLDAPBackend&#39;</span><span class="p">,</span>
+    <span class="s">&#39;accounts.backends.MyAuthBackend&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+<p>In case of a LDAP directory failure, we just have to disable <tt class="docutils literal">MyLDAPBackend</tt> and everybody can connect with <tt class="docutils literal">MyAuthBackend</tt>.</p>
+<div class="highlight"><pre><span class="n">AUTHENTICATION_BACKENDS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="c">#&#39;accounts.backends.MyLDAPBackend&#39;,</span>
+    <span class="s">&#39;accounts.backends.MyAuthBackend&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+<p>Thanks <a class="reference external" href="http://twitter.com/leplatrem">leplatrem</a> for review!</p>
+<p>[FR] <a class="reference external" href="http://makina-corpus.com/blog/metier/combiner-une-authentification-ldap-et-lauthentification-classique-django">Ce billet en français</a> sur le blog de Makina Corpus !</p>
+</div>
+	
+
+	</article>
+
+    <p>
+	<a href="https://twitter.com/share" class="twitter-share-button" data-via="" data-lang="en" data-size="large" data-related="">Tweet</a>
+	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+	</p>
+
+	<div class="comments">
+	<h2>Comments !</h2>
+	    <div id="disqus_thread"></div>
+	    <script type="text/javascript">
+	       var disqus_identifier = "combine-ldap-and-classical-authentication-in-django.html";
+	       (function() {
+	       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+	       dsq.src = 'http://flegithubio.disqus.com/embed.js';
+	       (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	      })();
+	    </script>
+	</div>
+
+		  </div>	
+		  
+		  <div class="sidebar">
+		    <div class="sidebar-container" id="sidebar-container-fixed">
+
+	            <aside>
+	              <h2>About</h2>
+			      <p>
+                    Software engineer and trainer at Makina Corpus Nantes. Python, Django and GIT addict. Dance, sail, take photos.
+			      </p>
+			    </aside>
+
+  	          <nav>
+	            <h2>Categories</h2>
+	            <ul>
+	                <li class="active"><a href="http://fle.github.io/category/development.html">development</a></li>
+	                <li ><a href="http://fle.github.io/category/geek-stuff.html">geek stuff</a></li>
+	                <li ><a href="http://fle.github.io/category/quick-tips.html">quick tips</a></li>
+	            </ul>
+	          </nav>
+
+	            <aside>
+	            <h2>Social</h2>
+			      <ul class="social">
+				    <li><a href="http://www.linkedin.com/in/florentlebreton">linkedin</a><i></i></li>
+				    <li><a href="https://twitter.com/__fle__">twitter</a><i></i></li>
+				    <li><a href="https://plus.google.com/114836609462836450047">google</a><i></i></li>
+				    <li><a href="https://github.com/fle">github</a><i></i></li>
+			      </ul>
+			    </aside>
+
+	            <aside>
+	              <h2>Blogroll</h2>
+	              <ul>
+	                  <li><a href="http://makina-corpus.com/blog">Makina Corpus</a></li>
+	                  <li><a href="http://planetdjango.org">Planet Django</a></li>
+	                  <li><a href="http://regilero.github.io">Regliero's blog</a></li>
+	              </ul>
+	            </aside>
+	        </div>
+		  </div>
+
+	  </div>
+
+      <footer>
+		<p role="contentinfo">
+		  Florent Lebreton (fle) - Proudly powered by <a href="http://alexis.notmyidea.org/pelican/">pelican</a>. Theme <a href="https://github.com/fle/pelican-simplegrey">pelican-simplegrey</a>.
+    	</p>
+
+	  </footer>	
+
+	</div>
+	
+	  <script>
+		var _gaq=[['_setAccount','UA-18281356-9'],['_trackPageview']];
+		(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+		g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+		s.parentNode.insertBefore(g,s)}(document,'script'));
+	  </script>
+
+</body>
+</html>
